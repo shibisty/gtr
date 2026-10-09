@@ -2,17 +2,23 @@
 
 `gtr.schema.json` is the schema for version 1 of the manifest (draft 2020-12).
 
-Editor hints: add `"$schema": "https://gtr.dev/schema/gtr.schema.json"` to gtr.json
-(until the domain is live, use a relative path to the file), or in VS Code:
+Editor hints: add
+`"$schema": "https://raw.githubusercontent.com/shibisty/gtr/main/schema/gtr.schema.json"`
+to gtr.json (the packages of the orm, passport, migration and faker families do), or in
+VS Code:
 
 ```json
 "json.schemas": [{ "fileMatch": ["gtr.json"], "url": "./schema/gtr.schema.json" }]
 ```
 
 - `examples/` — valid manifests: an application, a driver, a workspace root.
+
+Reserved for later (valid in the schema, not used by gtr-manager yet): `build`, `test`,
+`env`, and `pre<name>`/`post<name>` scripts.
 - `testdata/invalid/` — manifests the schema must reject.
 
-Validation (until `gtr` ships built-in validation in stage 3):
+gtr-manager checks the fields it uses when it reads a manifest; to validate a whole file
+against the schema:
 
 ```bash
 pip install jsonschema
@@ -22,6 +28,6 @@ python -c "import json,glob,jsonschema as j; s=json.load(open('gtr.schema.json')
 
 Expected: `True` for `examples/` and `False` for `testdata/invalid/`.
 
-Changes compared to the current gtr-manager manifest:
-`entrypoint` → `build.entry`, `engine` → `engines.go`, `website` → `homepage`,
+Manifests written by early gtr-manager versions are migrated on install, with a warning:
+`entrypoint` is dropped (see `build.entry`), `engine` → `engines.go`, `website` → `homepage`,
 the dependency key `github:user/repo` → an import path plus the source in the value (ADR-0003).

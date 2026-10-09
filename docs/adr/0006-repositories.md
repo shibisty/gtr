@@ -40,6 +40,7 @@ Status: **Accepted** · 2026-10-09
    | `passport` | `shibisty/passport.go` |
    | `passport-oauth2`, `passport-local`, `passport-google`, `passport-facebook` | `shibisty/passport.go-<name>-strategy` |
    | `passport-session-redis` | `shibisty/passport.go-redis-session` |
+   | `passport-session-file` | `shibisty/passport.go-file-session` |
    | `migration` | `shibisty/migration.go` |
    | `migration-orm` | `shibisty/migration.go-orm-driver` |
    | `faker` | `shibisty/faker.go` |

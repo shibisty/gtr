@@ -6,8 +6,11 @@
   "license": "MIT",
   "repository": "github:shibisty/orm.go-mysql-driver",
   "engines": { "go": ">=1.22" },
+  "dependencies": { "github.com/go-sql-driver/mysql": "~1.8.1" },
+  "devDependencies": { "orm": "github:shibisty/orm.go" },
   "peerDependencies": { "orm": "^0.1" },
-  "dependencies": { "github.com/go-sql-driver/mysql": "^1.10" },
-  "devDependencies": { "orm": "workspace:*" },
-  "scripts": { "test": "gtr test --integration" }
+  "scripts": {
+    "test": "go test ./...",
+    "test:integration": "go test -tags integration ./..."
+  }
 }

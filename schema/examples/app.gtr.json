@@ -7,10 +7,11 @@
   "dependencies": {
     "orm": "github:shibisty/orm.go#^0.1",
     "orm-sqlite": "github:shibisty/orm.go-sqlite-driver#^0.1",
-    "passport": "^0.1"
+    "passport": "github:shibisty/passport.go#^0.1",
+    "modernc.org/sqlite": "~1.34.0"
   },
   "devDependencies": { "faker": "github:shibisty/faker.go#^0.1" },
-  "scripts": { "start": "gtr dev", "migrate": "go run ./cmd/migrate", "pretest": "gtr run lint", "lint": "go vet ./..." },
+  "scripts": { "start": "go run ./cmd/blog", "migrate": "go run ./cmd/migrate", "pretest": "gtr run lint", "lint": "go vet ./..." },
   "build": { "entry": "./cmd/blog", "targets": ["linux/amd64", "windows/amd64"], "ldflags": "-s -w -X main.Version={{version}}" },
   "test": { "coverage": 70 },
   "env": [".env", ".env.local"]

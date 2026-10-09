@@ -1,8 +1,9 @@
 {
   "$schema": "../gtr.schema.json",
-  "name": "orm-dev",
+  "name": "passport-dev",
   "version": "0.0.0",
   "private": true,
-  "workspaces": ["core", "drivers/*"],
-  "scripts": { "test": "gtr --all run test" }
+  "dependencies": { "orm": "file:../orm.go/core" },
+  "workspaces": ["core", "strategies/*", "sessions/*", "example", "!strategies/old"],
+  "scripts": { "test": "gtr run -r test" }
 }
