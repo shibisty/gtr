@@ -1,6 +1,5 @@
 name: CI
 
-# Move this file to .github/workflows/ci.yml.
 # gtr-manager is included as a submodule (ADR-0006, item 1) and is checked together with gtr.
 
 on:

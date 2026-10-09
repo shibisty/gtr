@@ -1,6 +1,5 @@
 name: Release
 
-# Move this file to .github/workflows/release.yml.
 # Pushing a tag v1.2.3 builds archives for every platform with release.sh and
 # publishes them, with SHA256SUMS, as the GitHub release v1.2.3.
 # gtr installs gtr from these releases (ADR-0008).
@@ -26,7 +25,9 @@ jobs:
       - name: test
         run: go test -race ./...
       - name: build
-        run: ./release.sh "${GITHUB_REF_NAME}"
+        # bash explicitly: the script may be committed without the executable bit
+        # (from Windows), and ./release.sh would then fail with "Permission denied".
+        run: bash ./release.sh "${GITHUB_REF_NAME}"
       - name: publish
         env:
           GH_TOKEN: ${{ github.token }}
