@@ -49,7 +49,8 @@ func newApp(stdout, stderr io.Writer) *cli.App {
 		NewSource: func(l home.Layout, app, repo string) *release.Source {
 			return &release.Source{App: app, Repo: repo, API: os.Getenv("GTR_GITHUB_API"), Token: githubToken(), Home: l, Log: stderr}
 		},
-		Exec: runner.Run,
+		Exec:   runner.Run,
+		ExecGo: runner.RunGo,
 	}
 }
 

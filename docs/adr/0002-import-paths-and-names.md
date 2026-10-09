@@ -47,6 +47,12 @@ revealed a conflict when a name matches a stdlib package (`ambiguous import`).
      `internal`, `vendor`, `test`;
    - gtr reserved words: `gtr`, `go`, `self`.
 
+   *Implementation (stage 3):* the list is cached per Go version in
+   `~/.gtr/cache/std-<version>.txt`; `gtr init` checks the project name and
+   `gtr install` checks the project and every installed package. Without a go command
+   the check is skipped (the launcher always provides one). `gtr publish` arrives with
+   the registry.
+
 ## Consequences
 
 - Code looks like Node/Laravel code: short, memorable imports.

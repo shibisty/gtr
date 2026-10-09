@@ -123,6 +123,16 @@ type comparator struct {
 	v  Version
 }
 
+// AtLeast returns a range admitting what r admits from floor up, written
+// as comparators: ParseRange("^1.26").AtLeast(1.27.0) → ">=1.26.0 <2.0.0-0 >=1.27.0".
+func (r Range) AtLeast(floor Version) string {
+	var parts []string
+	for _, c := range r.cmps {
+		parts = append(parts, c.op+c.v.String())
+	}
+	return strings.TrimSpace(strings.Join(parts, " ") + " >=" + floor.String())
+}
+
 func (c comparator) match(v Version) bool {
 	cmp := Compare(v, c.v)
 	switch c.op {

@@ -57,9 +57,18 @@ Status: **Accepted** · 2026-10-09
      drivers\mysql\        clone of shibisty/orm.go-mysql-driver
      drivers\postgres\     …
    ```
-   Inside the workspace, drivers see the local core (`workspace:*`), so core
-   changes are immediately tested by all drivers. The layout already works this way
-   today; the only change is that each subdirectory becomes its own repository.
+   Inside the workspace, drivers see the local core, so core changes are immediately
+   tested by all drivers. The layout already works this way today; the only change is
+   that each subdirectory becomes its own repository.
+
+   *Implementation (stage 4, ADR-0009):* a member's committed `gtr.json` names the core
+   by its real source (`"orm": "github:shibisty/orm.go"` as a devDependency, `"orm":
+   "^0.1"` as a peer), and the workspace uses the member in place. Families that depend
+   on another family (passport-session-redis and migration-orm on orm) take its packages
+   from the sibling folder through `file:` dependencies of their workspace root
+   (`"orm": "file:../orm.go/core"`), which override the source for the whole workspace.
+   Apps and tests that never leave the workspace (`example`, `drivers/sqlite/integration`)
+   are members too.
 
 4. **Compatibility with the core** is maintained through `peerDependencies` and a shared
    test suite: the core publishes the `orm/drivertest` package, and every driver runs it

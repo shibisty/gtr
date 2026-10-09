@@ -4,12 +4,16 @@ package runner
 
 import (
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
+
+	"gtr/internal/goenv"
 )
 
 // GoEnv returns base with the selected Go first in PATH:
@@ -61,10 +65,32 @@ func equalKey(a, b string) bool {
 // streams, and returns its exit code. Errors starting the process are
 // returned as err.
 func Run(bin string, args, env []string) (int, error) {
+	return run(bin, args, env, os.Stderr)
+}
+
+// RunGo runs a go tool like Run, adding gtr hints to its error output
+// (goenv.Hints). Stderr stays untouched when it is a terminal and the
+// command runs user programs (go run), which could notice the difference.
+func RunGo(bin string, args, env []string) (int, error) {
+	if goenv.IsTerminal(os.Stderr) && goenv.RunsPrograms(args) {
+		return run(bin, args, env, os.Stderr)
+	}
+	h := goenv.NewHints(os.Stderr)
+	defer h.Close()
+	return run(bin, args, env, h)
+}
+
+func run(bin string, args, env []string, stderr io.Writer) (int, error) {
 	cmd := exec.Command(bin, args...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, stderr
 	cmd.Env = env
+	// With a hints pipe, a background process holding it open must not keep
+	// gtr waiting after the command exits.
+	cmd.WaitDelay = 500 * time.Millisecond
 	err := cmd.Run()
+	if errors.Is(err, exec.ErrWaitDelay) {
+		err = nil // exited successfully; a background process still held stderr
+	}
 	var exit *exec.ExitError
 	if errors.As(err, &exit) {
 		// Killed by a signal (Ctrl+C): exit like a shell would, 128+signal.

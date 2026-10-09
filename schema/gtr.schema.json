@@ -57,7 +57,7 @@
       "additionalProperties": { "$ref": "#/$defs/range" }
     },
     "workspaces": {
-      "description": "Globs of workspace package directories, e.g. [\"drivers/*\"] (stage 4).",
+      "description": "Member directories of a workspace: paths or globs relative to this file, e.g. [\"core\", \"drivers/*\"]; \"!dir\" excludes (ADR-0009).",
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
@@ -142,7 +142,7 @@
         { "pattern": "^(github|gitlab):[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[A-Za-z0-9_./-]+)?(#.+)?$" },
         { "pattern": "^git\\+https://[^#\\s]+(#.+)?$" },
         { "pattern": "^file:.+$" },
-        { "const": "workspace:*" }
+        { "pattern": "^workspace:.*$" }
       ]
     },
     "dependencyMap": {

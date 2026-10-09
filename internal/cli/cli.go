@@ -11,9 +11,11 @@ import (
 	"strings"
 
 	"gtr/internal/config"
+	"gtr/internal/goenv"
 	"gtr/internal/goinstall"
 	"gtr/internal/home"
 	"gtr/internal/manager"
+	"gtr/internal/project"
 	"gtr/internal/release"
 	"gtr/internal/resolve"
 	"gtr/internal/runner"
@@ -35,6 +37,7 @@ var projectCommands = map[string]bool{
 	"new": true, "init": true,
 	"install": true, "i": true, "add": true, "require": true,
 	"uninstall": true, "ui": true, "u": true, "remove": true, "rm": true,
+	"update": true, "up": true, "upgrade": true, "ci": true, "sync": true,
 	"run": true, "start": true,
 }
 
@@ -58,6 +61,8 @@ type App struct {
 	NewSource func(l home.Layout, app, repo string) *release.Source
 	// Exec runs a child process and returns its exit code.
 	Exec func(bin string, args, env []string) (int, error)
+	// ExecGo runs the go tool in a gtr project (with error hints); nil: Exec.
+	ExecGo func(bin string, args, env []string) (int, error)
 }
 
 func (a *App) exe(name string) string {
@@ -169,7 +174,32 @@ func (a *App) Shim(ctx context.Context, name string, args []string) error {
 	if self != "" && samePath(self, bin) {
 		return fmt.Errorf("%s resolves to the gtr shim itself", bin)
 	}
-	code, err := a.Exec(bin, args, env)
+	execute := a.Exec
+	if name == "go" {
+		// In a project whose go.mod gtr generated, go must not download or
+		// pick up a go.work: everything is in gtr_modules (ADR-0001).
+		// go uses the nearest go.mod: a nested module of its own (tools/go.mod)
+		// is not part of the gtr project.
+		modDir := dir
+		if len(args) > 1 && args[0] == "-C" {
+			modDir = args[1]
+			if !filepath.IsAbs(modDir) {
+				modDir = filepath.Join(dir, modDir)
+			}
+		}
+		if work := goenv.FindWork(modDir); work != "" {
+			env = goenv.Env(env, work) // a gtr workspace (ADR-0009)
+			if a.ExecGo != nil {
+				execute = a.ExecGo
+			}
+		} else if p, err := project.Find(modDir); err == nil && p != nil && nearestGoMod(modDir) == p.Dir && goenv.Generated(p.Dir) {
+			env = goenv.Env(env, "")
+			if a.ExecGo != nil {
+				execute = a.ExecGo
+			}
+		}
+	}
+	code, err := execute(bin, args, env)
 	if err != nil {
 		return fmt.Errorf("run %s: %w", bin, err)
 	}
@@ -519,6 +549,25 @@ func (a *App) shims(l home.Layout) error {
 	return a.placeShims(l, self)
 }
 
+// nearestGoMod returns the directory of the go.mod the go command would use
+// in dir, or "".
+func nearestGoMod(dir string) string {
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return ""
+	}
+	for {
+		if st, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !st.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
+}
+
 // placeShims creates the shims from the gtr executable at self.
 func (a *App) placeShims(l home.Layout, self string) error {
 	bin := filepath.Join(l.Root, "bin")
@@ -619,8 +668,11 @@ func Help(w io.Writer, version string) {
 Usage:
     gtr <command> [arguments]
 
-Project commands (run by gtr-manager with the project's Go):
-    new, init, install, uninstall, run, start   See `+"`gtr help`"+` of gtr-manager / its README
+Project commands (run by gtr-manager with the project's Go; see gtr-manager help):
+    new, init                      Create a project
+    install, add, remove, update   Manage packages (gtr.json, gtr.lock, gtr_modules/, go.mod)
+    ci, sync                       Strict install from gtr.lock; regenerate go.mod
+    run, start                     Run a script
 
 Versions:
     self install go [version]     Install Go (no version: what gtr.json requires)

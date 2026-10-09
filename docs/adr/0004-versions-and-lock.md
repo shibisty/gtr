@@ -28,7 +28,16 @@ A pre-release (`1.3.0-rc.1`) is selected only if the range names it explicitly.
 **Resolution.** One version per package name across the whole tree. The algorithm picks
 the highest version satisfying all ranges and backtracks on conflicts
 (PubGrub, as in Dart/uv, which produces explainable conflict messages).
+*Stage 3 implements a plain backtracking search with the same rules; its conflict
+report lists every range that applies to the failing package and who required it.
+PubGrub can replace it later if real graphs need smarter backtracking.*
 The version from `gtr.lock` is preferred as long as it satisfies the ranges.
+*Stage 3: a module required from `gtr.json` gets the highest version its range
+allows (or the locked one), like `go get`; versions then only go up through MVS. The
+generated `go.mod` lists every selected module, so the go command reads each one's
+`go.mod`; gtr does the same, to a fixed point, so both compute the same build list.
+If MVS raises a module above a `gtr.json` range, installation fails with an
+explanation. Lock entries of external modules also pin the `go.mod` hash (`goMod`).*
 For Go modules, gtr honours their `go.mod` and takes the minimum version
 that satisfies all requirements (like Go's MVS), so as not to break modules
 that rely on that behaviour.

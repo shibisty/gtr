@@ -91,3 +91,22 @@ func TestBest(t *testing.T) {
 		t.Fatal("no match expected")
 	}
 }
+
+func TestAtLeast(t *testing.T) {
+	for in, want := range map[string]map[string]bool{
+		"^1.26": {"1.26.9": false, "1.27.2": true, "2.0.0": false},
+		"1.26":  {"1.26.9": false, "1.27.0": false},
+		"*":     {"1.26.9": false, "1.27.0": true},
+	} {
+		r, _ := ParseRange(in)
+		combined, err := ParseRange(r.AtLeast(MustParse("1.27.0")))
+		if err != nil {
+			t.Fatalf("%s: %v", in, err)
+		}
+		for v, ok := range want {
+			if combined.Match(MustParse(v)) != ok {
+				t.Errorf("%s ∧ >=1.27: %s = %v", in, v, !ok)
+			}
+		}
+	}
+}

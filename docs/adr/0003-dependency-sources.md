@@ -37,7 +37,7 @@ Value forms:
 | `github:<owner>/<repo>[/<subdir>]#<range>` | GitHub, versions from git tags | Now, until the registry exists |
 | `gitlab:…#<range>`, `git+https://host/repo.git[/<subdir>]#<range>` | Other git hosts | Later |
 | `file:<path>` | A local directory, not copied | Developing several packages at once |
-| `workspace:*` | A package from the same workspace | Stage 4 |
+| `workspace:*`, `workspace:<range>` | A member of the same workspace (ADR-0009) | Now |
 
 Rules:
 
@@ -50,6 +50,16 @@ Rules:
    URL in `~/.gtr/config.json`), verified against sum.golang.org and
    extracted into the store. gtr resolves their own dependencies from `go.mod`
    the same way as its own (ADR-0004).
+
+   *Implementation (stage 3):* the proxy comes from `GTR_GOPROXY` or `GOPROXY`;
+   `go.mod` and zip hashes are compared with the checksum database's lookup records
+   (`GTR_GOSUMDB`, `GONOSUMDB`, `GOPRIVATE`, `GOSUMDB=off`) and with `gtr.lock`. The
+   transparency-log inclusion proof is not verified yet, so a compromised database
+   server could go unnoticed on the first download; later downloads are pinned by
+   `gtr.lock`. Every module of the build list is downloaded (not only those whose
+   packages are imported), which keeps `go build`/`go test` working with
+   `GOPROXY=off`. `go mod tidy` is not needed in a gtr project — `gtr install` plays its
+   role — and may rewrite the requirements of external modules.
 4. `gtr add <name>` without a source: until the registry exists, an error suggesting
    the `github:` form; after stage 6, the registry.
 
@@ -58,5 +68,5 @@ Rules:
 - One entry, one rule: the key always equals what goes into `import`.
 - Moving from GitHub to the registry means replacing the value `github:…#^0.1` with `^0.1`;
   the code does not change.
-- The current gtr-manager parser and manifest (`github:user/repo` as the key) must
-  be rewritten in stage 3; gtr reads the old format with a warning.
+- The old gtr-manager format (`github:user/repo` as the key) is migrated by
+  `gtr install` with a warning (done in stage 3).

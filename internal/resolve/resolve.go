@@ -5,6 +5,7 @@
 //
 //  1. GTR_GO_VERSION (a version or range);
 //  2. the nearest gtr.json: engines.go (or the legacy "engine" field);
+//     in a gtr workspace also at least the go line of its go.work;
 //  3. the global default set with `gtr self use go`.
 //
 // gtr-manager:
@@ -24,8 +25,10 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"gtr/internal/config"
+	"gtr/internal/goenv"
 	"gtr/internal/goinstall"
 	"gtr/internal/home"
 	"gtr/internal/manager"
@@ -88,16 +91,44 @@ func (r *Resolver) goRequest(dir string) (req, source string, err error) {
 		return "", "", err
 	}
 	if p != nil && p.Go != "" {
-		return p.Go, fmt.Sprintf("%s (engines.go %q)", p.Path, p.Go), nil
+		req, source = p.Go, fmt.Sprintf("%s (engines.go %q)", p.Path, p.Go)
+	} else {
+		c, err := config.Load(r.Home)
+		if err != nil {
+			return "", "", err
+		}
+		if c.Go != "" {
+			req, source = c.Go, "default (gtr self use go)"
+		}
 	}
-	c, err := config.Load(r.Home)
-	if err != nil {
-		return "", "", err
+	// In a workspace member, go.work may need a newer Go than the member
+	// asks for (another member, or the root, raised it; ADR-0009).
+	if work := goenv.FindWork(dir); work != "" {
+		if lang := goLanguage(goenv.WorkGo(work)); lang != "" {
+			if req == "" {
+				req, source = ">="+lang, fmt.Sprintf("%s (go %s)", work, lang)
+			} else if rng, err := semver.ParseRange(req); err == nil {
+				req, source = rng.AtLeast(semver.MustParse(lang+".0")), source+fmt.Sprintf(" and %s (go %s)", work, lang)
+			}
+		}
 	}
-	if c.Go != "" {
-		return c.Go, "default (gtr self use go)", nil
+	return req, source, nil
+}
+
+// goLanguage returns major.minor of a go directive ("1.23.1" → "1.23").
+func goLanguage(v string) string {
+	parts := strings.SplitN(v, ".", 3)
+	if len(parts) < 2 {
+		return ""
 	}
-	return "", "", nil
+	minor := parts[1]
+	if i := strings.IndexFunc(minor, func(r rune) bool { return r < '0' || r > '9' }); i >= 0 {
+		minor = minor[:i]
+	}
+	if minor == "" {
+		return ""
+	}
+	return parts[0] + "." + minor
 }
 
 // Manager returns the gtr-manager for dir.

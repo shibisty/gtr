@@ -14,5 +14,6 @@ Statuses: **Accepted** — agreed; **Proposed** — awaiting the author's decisi
 | [0006](0006-repositories.md) | Repository layout: one repository per package, gtr-manager as a gtr submodule | Accepted |
 | [0007](0007-minimum-go.md) | Minimum Go version for libraries | Proposed |
 | [0008](0008-version-selection.md) | Version selection, gtr-manager releases and command forwarding | Proposed |
+| [0009](0009-workspaces.md) | Workspaces: local development of package families | Accepted |
 
 The prototype that validated 0001 and 0002: [docs/prototype/bridge](../prototype/bridge/README.md).

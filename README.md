@@ -60,6 +60,13 @@ After `gtr self shims`, put `~/.gtr/bin` first in `PATH`. Plain `go build`,
 the global default, and with no default the next `go` in `PATH` (your system Go). After rebuilding gtr from source, run `gtr self shims` again
 (`gtr self update` does it for you).
 
+In a project whose `go.mod` gtr generated, the `go` shim also sets `GOPROXY=off`,
+`GOWORK=off` and `-mod=mod` (dependencies are installed by gtr, never by go) and follows
+go errors with a hint, for example
+``gtr: package "orm" is not installed: add it with `gtr add github:owner/repo` …``. When stderr is a terminal, `go run`, `go generate` and
+`go tool` are left without hints, so your program still sees the terminal. In a
+workspace (a `go.work` gtr generated, ADR-0009) the shim sets `GOWORK` to it instead.
+
 ### Environment
 
 | Variable | Meaning |
