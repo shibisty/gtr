@@ -9,6 +9,8 @@ GTR is to Go what npm is to Node: dependencies are declared in `gtr.json`, insta
 one command and imported by short names (`import "orm"`), while `go.mod` is generated so
 the Go toolchain and IDEs keep working.
 
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
 ```bash
 git clone --recurse-submodules https://github.com/shibisty/gtr.git
 # already cloned without submodules:
@@ -159,3 +161,7 @@ link gtr-manager with `gtr self link gtr ./gtr-manager/build/gtr-manager` after
 `make build` (or `go build -o build/gtr-manager ./cmd/gtr-manager`) in `gtr-manager/`.
 
 Design decisions: [docs/adr](docs/adr/README.md).
+
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
+If this project helps you, consider supporting its development on Patreon ❤️
