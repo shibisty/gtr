@@ -1,0 +1,4 @@
+[submodule "gtr-manager"]
+	path = gtr-manager
+	url = https://github.com/shibisty/gtr-manager.git
+	branch = master

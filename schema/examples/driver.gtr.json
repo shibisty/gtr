@@ -1,0 +1,13 @@
+{
+  "$schema": "../gtr.schema.json",
+  "name": "orm-mysql",
+  "version": "0.1.0",
+  "description": "MySQL driver for orm",
+  "license": "MIT",
+  "repository": "github:shibisty/orm.go-mysql-driver",
+  "engines": { "go": ">=1.22" },
+  "peerDependencies": { "orm": "^0.1" },
+  "dependencies": { "github.com/go-sql-driver/mysql": "^1.10" },
+  "devDependencies": { "orm": "workspace:*" },
+  "scripts": { "test": "gtr test --integration" }
+}

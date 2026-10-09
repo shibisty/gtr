@@ -1,0 +1,36 @@
+name: Release
+
+# Move this file to .github/workflows/release.yml.
+# Pushing a tag v1.2.3 builds archives for every platform with release.sh and
+# publishes them, with SHA256SUMS, as the GitHub release v1.2.3.
+# gtr installs gtr from these releases (ADR-0008).
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: test
+        run: go test -race ./...
+      - name: build
+        run: ./release.sh "${GITHUB_REF_NAME}"
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "${GITHUB_REF_NAME}" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --generate-notes $prerelease

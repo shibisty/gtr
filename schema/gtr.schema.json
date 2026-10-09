@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gtr.dev/schema/gtr.schema.json",
+  "title": "gtr.json",
+  "description": "gtr project or package manifest, version 1. See docs/adr/0001–0004.",
+  "type": "object",
+  "required": ["name", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": {
+      "description": "Package name and import path (ADR-0002).",
+      "$ref": "#/$defs/packageName"
+    },
+    "version": {
+      "description": "SemVer 2.0 version (ADR-0004).",
+      "$ref": "#/$defs/semver"
+    },
+    "description": { "type": "string", "maxLength": 300 },
+    "keywords": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "license": { "type": "string", "description": "SPDX identifier, e.g. MIT." },
+    "author": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "url": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "homepage": { "type": "string" },
+    "repository": { "type": "string", "description": "For example github:shibisty/orm.go" },
+    "private": {
+      "type": "boolean",
+      "description": "If true, gtr publish refuses to publish (applications, workspace roots)."
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "go": { "$ref": "#/$defs/range", "description": "Go versions, e.g. >=1.22. Determines the go directive and which Go the launcher picks." },
+        "gtr": { "$ref": "#/$defs/range", "description": "gtr-manager versions, e.g. ^0.2." }
+      }
+    },
+    "dependencies": { "$ref": "#/$defs/dependencyMap" },
+    "devDependencies": { "$ref": "#/$defs/dependencyMap" },
+    "peerDependencies": {
+      "description": "What the consuming project must install itself (driver → core). Ranges only.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/importPath" },
+      "additionalProperties": { "$ref": "#/$defs/range" }
+    },
+    "workspaces": {
+      "description": "Globs of workspace package directories, e.g. [\"drivers/*\"] (stage 4).",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "scripts": {
+      "description": "Commands for gtr run. pre<name>/post<name> run before and after.",
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-zA-Z0-9][a-zA-Z0-9:_.-]*$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entry": { "type": "string", "description": "The main package, e.g. . or ./cmd/app" },
+        "output": { "type": "string", "description": "Binary name; defaults to name." },
+        "outDir": { "type": "string", "default": "build" },
+        "targets": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+/[a-z0-9]+$" },
+          "uniqueItems": true,
+          "description": "GOOS/GOARCH, e.g. windows/amd64."
+        },
+        "ldflags": { "type": "string", "description": "Supports {{version}}, {{commit}}, {{date}}." },
+        "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "cgo": { "type": "boolean", "default": false },
+        "trimpath": { "type": "boolean", "default": true }
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "coverage": { "type": "number", "minimum": 0, "maximum": 100, "description": "Minimum coverage, %." },
+        "race": { "type": "boolean", "default": true },
+        "timeout": { "type": "string", "pattern": "^[0-9]+(ms|s|m|h)$" }
+      }
+    },
+    "env": {
+      "description": "Environment files for gtr run/dev, in order; later files override earlier ones.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gomod": {
+      "description": "ignore: go.mod is in .gitignore (default); commit: go.mod is kept in the repository (ADR-0001).",
+      "enum": ["ignore", "commit"],
+      "default": "ignore"
+    }
+  },
+  "$defs": {
+    "packageName": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "not": {
+        "enum": ["std", "cmd", "all", "main", "tool", "work", "internal", "vendor", "test", "gtr", "go", "self"]
+      }
+    },
+    "goModulePath": {
+      "type": "string",
+      "description": "External Go module path: a dot in the first element.",
+      "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)+(/[A-Za-z0-9._~-]+)*$"
+    },
+    "importPath": {
+      "anyOf": [{ "$ref": "#/$defs/packageName" }, { "$ref": "#/$defs/goModulePath" }]
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "range": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(\\*|[\\^~]?v?\\d+(\\.\\d+){0,2}(-[0-9A-Za-z.-]+)?|((>=|<=|>|<|=)\\s*v?\\d+(\\.\\d+){0,2}(-[0-9A-Za-z.-]+)?\\s*)+)$"
+    },
+    "dependencySpec": {
+      "description": "A range (registry / proxy.golang.org) or a source (ADR-0003).",
+      "type": "string",
+      "anyOf": [
+        { "$ref": "#/$defs/range" },
+        { "pattern": "^(github|gitlab):[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[A-Za-z0-9_./-]+)?(#.+)?$" },
+        { "pattern": "^git\\+https://[^#\\s]+(#.+)?$" },
+        { "pattern": "^file:.+$" },
+        { "const": "workspace:*" }
+      ]
+    },
+    "dependencyMap": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/importPath" },
+      "additionalProperties": { "$ref": "#/$defs/dependencySpec" }
+    }
+  }
+}

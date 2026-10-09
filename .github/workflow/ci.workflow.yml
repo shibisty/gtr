@@ -1,0 +1,49 @@
+name: CI
+
+# Move this file to .github/workflows/ci.yml.
+# gtr-manager is included as a submodule (ADR-0006, item 1) and is checked together with gtr.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.module }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        module: [".", "gtr-manager"]
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache: false
+      - name: gofmt
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: vet
+        run: go vet ./...
+      - name: test
+        shell: bash
+        run: go test -race -count=1 -coverpkg=./... -coverprofile=coverage.out ./...
+      - name: coverage >= 75%
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%","",$3); print $3}')
+          echo "coverage: ${total}%"
+          awk -v t="$total" 'BEGIN { exit (t >= 75) ? 0 : 1 }'

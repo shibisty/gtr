@@ -1,0 +1,17 @@
+{
+  "$schema": "../gtr.schema.json",
+  "name": "blog",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "go": ">=1.22", "gtr": "^0.2" },
+  "dependencies": {
+    "orm": "github:shibisty/orm.go#^0.1",
+    "orm-sqlite": "github:shibisty/orm.go-sqlite-driver#^0.1",
+    "passport": "^0.1"
+  },
+  "devDependencies": { "faker": "github:shibisty/faker.go#^0.1" },
+  "scripts": { "start": "gtr dev", "migrate": "go run ./cmd/migrate", "pretest": "gtr run lint", "lint": "go vet ./..." },
+  "build": { "entry": "./cmd/blog", "targets": ["linux/amd64", "windows/amd64"], "ldflags": "-s -w -X main.Version={{version}}" },
+  "test": { "coverage": 70 },
+  "env": [".env", ".env.local"]
+}

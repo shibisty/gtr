@@ -1,0 +1,8 @@
+{
+  "$schema": "../gtr.schema.json",
+  "name": "orm-dev",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": ["core", "drivers/*"],
+  "scripts": { "test": "gtr --all run test" }
+}

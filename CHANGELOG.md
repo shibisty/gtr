@@ -1,0 +1,53 @@
+# Changelog
+
+## Unreleased
+
+### Added (stage 2, ADR-0008)
+- Project commands (`new`, `init`, `install`, `uninstall`, `run`, `start`) are
+  forwarded to gtr-manager, with the project's Go in `PATH`/`GOROOT` and
+  `GOTOOLCHAIN=local`; the exit code is passed through.
+- Go version per project from `engines.go` in the nearest `gtr.json` (also the legacy
+  `engine` field), `GTR_GO_VERSION`, or the global default; missing versions are
+  installed automatically. npm-style ranges: `1.26`, `^1.22`, `~1.26`, `>=1.26 <1.28`.
+- gtr-manager versions: `self install gtr`, `engines.gtr`, `GTR_MANAGER_VERSION`,
+  installed from GitHub releases verified against `SHA256SUMS`.
+- `self link gtr <path>` / `self unlink gtr` — use a local gtr-manager build.
+- `self use`, `self uninstall`, `self current` (which version applies here and why).
+- `self shims` — `go`/`gofmt` in `~/.gtr/bin` that follow the project's Go version.
+- `self update [version]` — gtr updates itself from its releases.
+- `self install go` without a version installs what `gtr.json` requires.
+- `release.sh` / `release.workflow.yml`; `GTR_GITHUB_API` + `GTR_GITHUB_TOKEN` for GitHub
+  Enterprise or a mirror (`GITHUB_TOKEN` is sent only to api.github.com).
+- Shims fall back to the system Go when no version is selected; Ctrl+C reaches the
+  child, and a signal exit becomes 128+signal.
+
+### Fixed
+- Go versions installed as symlinks into `~/.gtr/go/` are recognized.
+
+### Fixed
+- `gtr self` without a subcommand and `gtr self install` without arguments panicked.
+  Unknown subcommands were silently ignored; now they are usage errors (exit code 2).
+- `self install go`:
+  - `1` or `1.27` could select a release candidate; only stable releases are picked
+    for partial versions, and `1.20` means the latest 1.20.x;
+  - the SHA-256 from go.dev is verified, the HTTP status is checked (an error page was
+    saved as the archive), requests time out;
+  - archives with `../` paths (zip-slip) are rejected;
+  - Go was installed into `./go` of the current folder; now `~/.gtr/go/<version>`
+    (`GTR_HOME`, ADR-0005), unpacked through a temporary folder and moved in one
+    rename, so a failed install leaves nothing behind;
+  - errors are reported instead of panics.
+- `version` was listed in help but disabled.
+- `Makefile` used spaces instead of tabs; `build.ps1`/`win.ps1` left `GOOS`/`GOARCH`
+  set in the console and ignored `go build` failures; `build.sh` used a different
+  output layout than `build.ps1`.
+
+### Added
+- `self list [go|gtr]` lists installed versions (was a stub).
+- gtr-manager as a git submodule (ADR-0006).
+- Tests, CI workflow (`ci.workflow.yml`, move it to `.github/workflows/`), README.
+
+### Changed
+- Help lists only working commands; stage-2 commands (`self install gtr`, `self use`,
+  `self update`) report that they are not implemented yet; project commands point to
+  gtr-manager.
