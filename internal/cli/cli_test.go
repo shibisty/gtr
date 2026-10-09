@@ -155,7 +155,10 @@ type harness struct {
 }
 
 func newHarness(t *testing.T) *harness {
-	h := &harness{out: &bytes.Buffer{}, sout: &bytes.Buffer{}, serr: &bytes.Buffer{}, root: t.TempDir(), cwd: t.TempDir(), env: map[string]string{"PATH": "/usr/bin"}}
+	h := &harness{out: &bytes.Buffer{}, sout: &bytes.Buffer{}, serr: &bytes.Buffer{}, root: t.TempDir(), cwd: t.TempDir(),
+		// An empty PATH directory: the machine's own go (/usr/bin/go on CI runners) must
+		// not leak into the tests.
+		env: map[string]string{"PATH": t.TempDir()}}
 	h.gh = newGitHub(t)
 	h.godev = newGoDev(t, "1.26.9", "1.27.2", "1.28rc1")
 	h.exe = filepath.Join(t.TempDir(), "gtr")
