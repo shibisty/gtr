@@ -9,6 +9,29 @@ GTR is to Go what npm is to Node: dependencies are declared in `gtr.json`, insta
 one command and imported by short names (`import "orm"`), while `go.mod` is generated so
 the Go toolchain and IDEs keep working.
 
+## Install
+
+```bash
+# Linux, macOS
+curl -fsSL https://raw.githubusercontent.com/shibisty/gtr/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/shibisty/gtr/main/install.ps1 | iex
+```
+
+The installers download the latest release for your system, check it against
+`SHA256SUMS`, put `gtr` into `~/.gtr/bin` with the `go`/`gofmt` shims and add that
+directory to `PATH`. Settings: `GTR_VERSION=0.2.0` (a version instead of the latest),
+`GTR_HOME`, `GTR_NO_SHIMS=1`, `GTR_NO_MODIFY_PATH=1`. Then check the setup:
+
+```bash
+gtr doctor
+```
+
+From source:
+
 ```bash
 git clone --recurse-submodules https://github.com/shibisty/gtr.git
 # already cloned without submodules:
@@ -18,11 +41,11 @@ git submodule update --init
 ## Quick start
 
 ```bash
-gtr new blog -y && cd blog            # gtr.json and .gitignore
+gtr new blog -y && cd blog            # gtr.json, main.go with a test (templates: app, cli, lib, orm-driver)
 gtr add github:shibisty/orm.go github:shibisty/orm.go-postgres-driver
-# write main.go, then:
 gtr run                               # the "start" script: go run .
 gtr run test
+gtr list --tree                       # what is installed; gtr outdated: what is newer
 ```
 
 ```go
@@ -64,10 +87,10 @@ gtr run test        # installs Go 1.27.x and gtr-manager 0.2.x if needed, then r
 gtr self current    # shows which versions apply here and why
 ```
 
-Priority for Go: `GTR_GO_VERSION` → `engines.go` of the nearest `gtr.json` (in a
+Priority for Go: `gtr --go <version> <command>` or `GTR_GO_VERSION` → `engines.go` of the nearest `gtr.json` (in a
 workspace member also at least the `go` line of the workspace's `go.work`) → the global
 default (`gtr self use go`). For gtr-manager: a linked local build →
-`GTR_MANAGER_VERSION` → `engines.gtr` → the global default → the latest release.
+`gtr --gtr <version>` or `GTR_MANAGER_VERSION` → `engines.gtr` → the global default → the latest release.
 
 Version syntax: `1.26.9` (exact), `1.26` (latest 1.26.x), `^1.22`, `~1.26`,
 `">=1.26 <1.28"`, `*`. Go pre-releases (`1.28rc1`) only when named explicitly.
@@ -79,13 +102,20 @@ gtr self install go 1.26.9    # or 1.26, ^1.22; without a version: what gtr.json
 gtr self install gtr 0.2
 gtr self use go 1.27          # global default outside projects
 gtr self list                 # installed versions (* = default)
+gtr self list --remote        # versions available to install (--all: every patch)
 gtr self uninstall go 1.25.4
 gtr self link gtr ./gtr-manager/build/gtr-manager   # develop gtr-manager
 gtr self shims                # go/gofmt in ~/.gtr/bin follow the project
 gtr self update               # update gtr itself
+gtr self prune                # remove downloaded archives and superseded patch versions (--dry-run)
+
+gtr env                       # Go, gtr-manager and paths used here; installs nothing (--json, or NAME...)
+gtr doctor                    # check the installation, PATH and shims, the project, the network
 ```
 
-Run `gtr help` for the full list.
+Run `gtr help` for the full list. `gtr self prune` keeps the default versions and the ones
+the current directory uses; a project that pins a removed patch gets it back on its next
+command.
 
 ### Shims
 
@@ -111,6 +141,7 @@ workspace (a `go.work` gtr generated, ADR-0009) the shim sets `GOWORK` to it ins
 | `GITHUB_TOKEN` | Raises the GitHub API rate limit, private repositories |
 | `GTR_GITHUB_API` | GitHub Enterprise or a mirror of the GitHub API |
 | `GTR_GITHUB_TOKEN` | Token for `GTR_GITHUB_API` (`GITHUB_TOKEN` is never sent to it) |
+| `GTR_GO_MIRROR` | A mirror of https://go.dev/dl/, e.g. https://golang.google.cn/dl/ |
 
 Child processes get `GOROOT`, `PATH`, `GTR_GO_VERSION` and `GOTOOLCHAIN=local`
 (unless you set `GOTOOLCHAIN` yourself), so Go never downloads another toolchain
@@ -135,7 +166,8 @@ Projects link packages from the store into their `gtr_modules/` (junctions on Wi
 so each version is downloaded once for all projects (ADR-0005).
 
 Go comes from go.dev, gtr and gtr-manager from GitHub releases; every archive is
-verified by SHA-256 before it is unpacked.
+verified by SHA-256 before it is unpacked. A dropped download resumes where it stopped
+(up to four attempts); on a terminal the download shows its progress.
 
 ## Development
 
@@ -153,9 +185,12 @@ git commit -am "Update gtr-manager"
 
 CI: `.github/workflows/ci.workflow.yml`. Releases: pushing a tag `v1.2.3` runs
 `.github/workflows/release.workflow.yml`, which builds archives with `./release.sh` and
-publishes them with `SHA256SUMS`. No release has been published yet; until then build from
-source (`go build -o build/gtr ./cmd/gtr`; `./build.sh` cross-compiles every platform) and
-link gtr-manager with `gtr self link gtr ./gtr-manager/build/gtr-manager` after
-`make build` (or `go build -o build/gtr-manager ./cmd/gtr-manager`) in `gtr-manager/`.
+publishes them with `SHA256SUMS`. Local builds: `make build` (build/gtr, version from
+`git describe`) or `./build.sh [version]`, which cross-compiles every platform into
+`build/<version>/<os>-<arch>/`. To try a gtr-manager change, `make build` in `gtr-manager/`
+and `gtr self link gtr ./gtr-manager/build/gtr-manager`.
+
+`go test -short ./...` skips the end-to-end tests, which build gtr and run it against
+fake servers (`cmd/gtr/e2e_test.go`, `cmd/gtr/install_script_test.go`).
 
 Design decisions: [docs/adr](docs/adr/README.md).

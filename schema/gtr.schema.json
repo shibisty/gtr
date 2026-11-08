@@ -139,8 +139,9 @@
       "type": "string",
       "anyOf": [
         { "$ref": "#/$defs/range" },
-        { "pattern": "^(github|gitlab):[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[A-Za-z0-9_./-]+)?(#.+)?$" },
-        { "pattern": "^git\\+https://[^#\\s]+(#.+)?$" },
+        { "description": "github:owner/repo[/subdir][#range]", "pattern": "^github:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(/[A-Za-z0-9_./-]+)?(#.+)?$" },
+        { "description": "gitlab:group[/subgroup]/project[//subdir][#range]", "pattern": "^gitlab:[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+(//[A-Za-z0-9_./-]+)?(#.+)?$" },
+        { "description": "git+https://host/repo.git[//subdir][#range], also git+ssh:// and git+file://", "pattern": "^git\\+(https|ssh|file)://[^#\\s]+(#.+)?$" },
         { "pattern": "^file:.+$" },
         { "pattern": "^workspace:.*$" }
       ]

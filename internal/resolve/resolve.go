@@ -56,6 +56,21 @@ type Resolver struct {
 	ManagerInstaller Installer
 	ManagerBinary    string // "gtr-manager" or "gtr-manager.exe"
 	Log              io.Writer
+	// NoInstall reports a missing version as *NotInstalledError instead of
+	// installing it (gtr env, gtr doctor).
+	NoInstall bool
+}
+
+// NotInstalledError is returned with NoInstall when no installed version
+// satisfies the request.
+type NotInstalledError struct {
+	Tool    string // "Go" or "gtr-manager"
+	Request string // the range, e.g. "^1.27"
+	Source  string // why it is required
+}
+
+func (e *NotInstalledError) Error() string {
+	return fmt.Sprintf("%s %s is required by %s and not installed", e.Tool, e.Request, e.Source)
 }
 
 func (r *Resolver) log() io.Writer {
@@ -173,6 +188,9 @@ func (r *Resolver) pick(ctx context.Context, tool, req, source string, installed
 	}
 	if v, ok := rng.Best(installed); ok {
 		return v, nil
+	}
+	if r.NoInstall {
+		return "", &NotInstalledError{Tool: tool, Request: rng.String(), Source: source}
 	}
 	fmt.Fprintf(r.log(), "%s %s is required by %s; installing it...\n", tool, rng, source)
 	v, err := in.Install(ctx, req)

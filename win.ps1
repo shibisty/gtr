@@ -3,7 +3,15 @@ $ErrorActionPreference = "Stop"
 $app = "gtr"
 $src = "./cmd/gtr"
 $out = "./build"
-$version = "0.0.1"
+# Version: the first argument, else the nearest git tag (v1.2.3 -> 1.2.3), else "dev".
+$version = if ($args.Count -gt 0) { $args[0] } else { $null }
+if (-not $version -and (Get-Command git -ErrorAction SilentlyContinue)) {
+    # Not a terminating error when git fails (not a repository) under "Stop".
+    try { $version = (& git describe --tags --always --dirty 2>$null) } catch { $version = $null }
+    if ($LASTEXITCODE -ne 0) { $version = $null }
+}
+if (-not $version) { $version = "dev" }
+$version = "$version".TrimStart("v")
 
 if(Test-Path $out){
     Remove-Item $out -Recurse -Force
@@ -26,7 +34,7 @@ foreach($p in $platforms){
     $env:GOOS = $p.GOOS
     $env:GOARCH = $p.GOARCH
 
-    $dir = Join-Path $out "$version-$($p.GOOS)-$($p.GOARCH)"
+    $dir = Join-Path (Join-Path $out $version) "$($p.GOOS)-$($p.GOARCH)"
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
     
     $file = Join-Path $dir "$app$($p.EXT)"

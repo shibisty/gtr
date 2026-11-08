@@ -612,13 +612,13 @@ func TestShims(t *testing.T) {
 	w.app.GOOS = "windows"
 	w.env["PATH"] = strings.ToUpper(filepath.Join(w.root, "bin"))
 	w.run("self", "shims")
-	if strings.Contains(w.out.String(), "SetEnvironmentVariable") {
+	if strings.Contains(w.out.String(), "PowerShell:") {
 		t.Fatal("PATH comparison must be case-insensitive on Windows")
 	}
 	w.env["PATH"] = ""
 	w.out.Reset()
 	w.run("self", "shims")
-	if !strings.Contains(w.out.String(), "SetEnvironmentVariable('Path'") || strings.Contains(w.out.String(), "setx") {
+	if !strings.Contains(w.out.String(), "'ExpandString'") || strings.Contains(w.out.String(), "SetEnvironmentVariable") || strings.Contains(w.out.String(), "setx") {
 		t.Fatalf("windows hint: %s", w.out)
 	}
 }

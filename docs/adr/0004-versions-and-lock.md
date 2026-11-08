@@ -1,6 +1,6 @@
 # ADR-0004. Versions, dependency resolution, gtr.lock
 
-Status: **Proposed** · 2026-10-09
+Status: **Accepted** · 2026-10-09
 
 ## Context
 
@@ -78,6 +78,19 @@ the project has installed a compatible version of the core package, and fail wit
 Go's `h1` algorithm (`golang.org/x/mod/sumdb/dirhash`, SHA-256 over a
 sorted list of "file hash + path"). For Go modules the value
 matches `go.sum` and is verified against sum.golang.org.
+
+**Installation.** Packages and modules are downloaded in parallel (8 at a time); the
+result does not depend on timing (the first error in name order is reported).
+`--offline` (or `GTR_OFFLINE=1`) installs from the store and the module cache only:
+git packages are offered in the versions the store has (their commits come from
+`gtr.lock`), modules in the versions the cache or the store has; nothing is
+downloaded and the checksum database is not asked (what is stored was verified
+when it was downloaded, and `gtr.lock` pins the hashes).
+
+**Inspection** works from `gtr.lock` without the network: `gtr list [--tree]`,
+`gtr why <name>` (the chains of requirements, peers included). `gtr outdated`
+asks the sources: *wanted* is the newest version all ranges in the graph allow
+(what `gtr update` installs), *latest* the newest overall.
 
 ## Consequences
 

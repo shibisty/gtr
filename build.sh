@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
+# Cross-compiles gtr for every platform into build/<version>/<os>-<arch>/.
+# Usage: ./build.sh [version]   (release archives: ./release.sh)
 
 set -e
 
 APP=gtr
 SRC=./cmd/gtr
 OUT=./build
-VERSION="0.0.1"
+# Version: the first argument, else the nearest git tag (v1.2.3 → 1.2.3, with
+# -N-g<sha> after it on later commits), else "dev".
+VERSION=${1:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}
+VERSION=${VERSION#v}
 
 echo "Cleaning..."
 rm -rf "$OUT"
@@ -24,7 +29,7 @@ for platform in "${platforms[@]}"; do
 
     read -r GOOS GOARCH EXT <<<"$platform"
 
-    DIR="$OUT/$VERSION-$GOOS-$GOARCH"
+    DIR="$OUT/$VERSION/$GOOS-$GOARCH"
     FILE="$DIR/$APP$EXT"
 
     mkdir -p "$DIR"

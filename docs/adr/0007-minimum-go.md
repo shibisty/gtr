@@ -1,6 +1,6 @@
 # ADR-0007. Minimum Go version for libraries
 
-Status: **Proposed** · 2026-10-09
+Status: **Accepted** · 2026-10-09
 
 ## Context
 
@@ -20,6 +20,11 @@ orm.go had to exclude the faker example from `go.work`.
 - Library CI tests two versions: the minimum (1.22) and the latest.
 
 ## Consequences
+
+*Applied (stage 5): every library declares `engines.go: ">=1.22"`; external modules
+are required with `~` ranges so that a newer patch never needs a newer Go; CI tests
+1.22 and stable (on macOS only stable: Go 1.22 binaries lack `LC_UUID`, which
+current macOS refuses).*
 
 - `gtr` picks the Go version for a project from `engines.go` (stage 2), so a low
   minimum does not prevent an application from using a newer Go.

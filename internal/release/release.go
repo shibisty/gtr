@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"gtr/internal/archive"
+	"gtr/internal/download"
 	"gtr/internal/home"
 	"gtr/internal/semver"
 )
@@ -68,6 +69,8 @@ type Source struct {
 	GOARCH string
 	Home   home.Layout
 	Log    io.Writer
+	// Backoff is the pause before retrying a dropped download (default 1s).
+	Backoff time.Duration
 }
 
 func (s *Source) defaults() {
@@ -257,28 +260,16 @@ func (s *Source) download(ctx context.Context, url, name, wantSHA string) (strin
 		return dst, nil
 	}
 	fmt.Fprintf(s.Log, "Downloading %s\n", name)
-	resp, err := s.get(ctx, url, "application/octet-stream")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	tmp, err := os.CreateTemp(dir, name+".*.part")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(tmp.Name())
-	h := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tmp, h), resp.Body)
-	if cerr := tmp.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
+	g := &download.Getter{Client: s.Client, Log: s.Log, Backoff: s.Backoff, Header: func(req *http.Request) {
+		req.Header.Set("Accept", "application/octet-stream")
+		if s.Token != "" && sameHost(url, s.API) {
+			req.Header.Set("Authorization", "Bearer "+s.Token)
+		}
+	}}
+	if err := g.File(ctx, url, dst, wantSHA); err != nil {
 		return "", fmt.Errorf("download %s: %w", name, err)
 	}
-	if got := hex.EncodeToString(h.Sum(nil)); got != wantSHA {
-		return "", fmt.Errorf("download %s: SHA-256 mismatch (expected %s, got %s)", name, wantSHA, got)
-	}
-	return dst, os.Rename(tmp.Name(), dst)
+	return dst, nil
 }
 
 func findFile(root, name string) (string, error) {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"gtr/internal/goinstall"
 	"gtr/internal/home"
 	"gtr/internal/manager"
-	"gtr/internal/project"
 	"gtr/internal/release"
 	"gtr/internal/resolve"
 	"gtr/internal/runner"
@@ -39,6 +39,7 @@ var projectCommands = map[string]bool{
 	"uninstall": true, "ui": true, "u": true, "remove": true, "rm": true,
 	"update": true, "up": true, "upgrade": true, "ci": true, "sync": true,
 	"run": true, "start": true,
+	"list": true, "ls": true, "why": true, "outdated": true,
 }
 
 // ShimNames are the Go tools gtr can stand in for (see `gtr self shims`).
@@ -63,6 +64,9 @@ type App struct {
 	Exec func(bin string, args, env []string) (int, error)
 	// ExecGo runs the go tool in a gtr project (with error hints); nil: Exec.
 	ExecGo func(bin string, args, env []string) (int, error)
+	// HTTP is used by `gtr doctor` for network checks; nil: a client with a
+	// 10-second timeout.
+	HTTP *http.Client
 }
 
 func (a *App) exe(name string) string {
@@ -90,6 +94,10 @@ func (a *App) managerInstaller(l home.Layout) *manager.Installer {
 
 // Run runs the command given by args (without the program name).
 func (a *App) Run(ctx context.Context, args []string) error {
+	args, err := a.globalFlags(args)
+	if err != nil {
+		return err
+	}
 	if len(args) == 0 {
 		Help(a.Out, a.Version)
 		return nil
@@ -103,6 +111,10 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		return nil
 	case "self":
 		return a.self(ctx, args[1:])
+	case "env":
+		return a.env(ctx, args[1:])
+	case "doctor":
+		return a.doctor(ctx, args[1:])
 	default:
 		if projectCommands[cmd] {
 			return a.forward(ctx, args)
@@ -187,13 +199,8 @@ func (a *App) Shim(ctx context.Context, name string, args []string) error {
 				modDir = filepath.Join(dir, modDir)
 			}
 		}
-		if work := goenv.FindWork(modDir); work != "" {
-			env = goenv.Env(env, work) // a gtr workspace (ADR-0009)
-			if a.ExecGo != nil {
-				execute = a.ExecGo
-			}
-		} else if p, err := project.Find(modDir); err == nil && p != nil && nearestGoMod(modDir) == p.Dir && goenv.Generated(p.Dir) {
-			env = goenv.Env(env, "")
+		if mode, work := goMode(modDir); mode != "" {
+			env = goenv.Env(env, work) // work is set in a gtr workspace (ADR-0009)
 			if a.ExecGo != nil {
 				execute = a.ExecGo
 			}
@@ -244,7 +251,7 @@ func samePath(a, b string) bool {
 
 func (a *App) self(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%w: specify a self subcommand (install, uninstall, use, list, current, link, unlink, shims, update)", ErrUsage)
+		return fmt.Errorf("%w: specify a self subcommand (install, uninstall, use, list, current, link, unlink, shims, update, prune)", ErrUsage)
 	}
 	l, err := a.Home()
 	if err != nil {
@@ -271,15 +278,29 @@ func (a *App) self(ctx context.Context, args []string) error {
 			return err
 		}
 		return a.use(ctx, l, tool, req)
-	case "list":
-		if len(rest) > 1 || (len(rest) == 1 && rest[0] != "go" && rest[0] != "gtr") {
-			return fmt.Errorf("%w: self list [go|gtr]", ErrUsage)
+	case "list", "ls":
+		tool, remote, all := "", false, false
+		for _, arg := range rest {
+			switch {
+			case arg == "--remote" || arg == "-r":
+				remote = true
+			case arg == "--all" || arg == "-a":
+				all = true
+			case (arg == "go" || arg == "gtr") && tool == "":
+				tool = arg
+			default:
+				return fmt.Errorf("%w: self list [go|gtr] [--remote [--all]]", ErrUsage)
+			}
 		}
-		tool := ""
-		if len(rest) == 1 {
-			tool = rest[0]
+		if all && !remote {
+			return fmt.Errorf("%w: --all goes with --remote", ErrUsage)
+		}
+		if remote {
+			return a.listRemote(ctx, l, tool, all)
 		}
 		return a.list(l, tool)
+	case "prune":
+		return a.prune(ctx, l, rest)
 	case "current":
 		return a.current(ctx, l)
 	case "link":
@@ -583,10 +604,13 @@ func (a *App) placeShims(l home.Layout, self string) error {
 	if !a.inPath(a.Getenv("PATH"), bin) {
 		fmt.Fprintf(a.Out, "Add it to PATH before other Go installations:\n")
 		if a.GOOS == "windows" {
-			// Not `setx PATH "...;%PATH%"`: that copies the system PATH into the
-			// user PATH and truncates it at 1024 characters.
-			fmt.Fprintf(a.Out, "  PowerShell: [Environment]::SetEnvironmentVariable('Path', '%s;' + [Environment]::GetEnvironmentVariable('Path', 'User'), 'User')\n", bin)
-			fmt.Fprintf(a.Out, "  then open a new terminal\n")
+			// Not `setx PATH "...;%PATH%"` (it copies the system PATH into the user
+			// PATH and truncates it at 1024 characters), and not
+			// [Environment]::SetEnvironmentVariable (it expands %VARIABLES% in the
+			// PATH for good): the registry value, unexpanded, as install.ps1 does.
+			fmt.Fprintf(a.Out, "  PowerShell: $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true); "+
+				"$k.SetValue('Path', '%s;' + $k.GetValue('Path', '', 'DoNotExpandEnvironmentNames'), 'ExpandString'); $k.Close()\n", bin)
+			fmt.Fprintf(a.Out, "  then sign out and in again (or restart Explorer) and open a new terminal\n")
 		} else {
 			fmt.Fprintf(a.Out, "  export PATH=\"%s:$PATH\"   (add to ~/.profile or your shell rc)\n", bin)
 		}
@@ -673,6 +697,11 @@ Project commands (run by gtr-manager with the project's Go; see gtr-manager help
     install, add, remove, update   Manage packages (gtr.json, gtr.lock, gtr_modules/, go.mod)
     ci, sync                       Strict install from gtr.lock; regenerate go.mod
     run, start                     Run a script
+    list, why, outdated            Inspect installed packages
+
+Tools:
+    env [--json] [NAME...]        Show the Go, gtr-manager and paths used here (installs nothing)
+    doctor [--offline]            Check the installation, PATH, the project and the network
 
 Versions:
     self install go [version]     Install Go (no version: what gtr.json requires)
@@ -680,18 +709,21 @@ Versions:
     self uninstall go|gtr <ver>   Remove an installed version
     self use go|gtr <version>     Set the global default (installs it if needed)
     self list [go|gtr]            List installed versions (* = default)
+    self list --remote [go|gtr]   List versions available to install (--all: every patch)
     self current                  Show the versions used in this directory and why
     self link gtr <path>          Use a local gtr-manager build instead of releases
     self unlink gtr               Stop using the linked build
     self shims                    Create go/gofmt shims in ~/.gtr/bin
     self update [version]         Update gtr itself
+    self prune [--dry-run]        Remove downloaded archives and superseded patch versions
 
     version                       Show the gtr version
     help                          Show this help
 
 Version syntax: 1.26.9 (exact), 1.26 (latest 1.26.x), ^1.22, ~1.26, ">=1.26 <1.28".
 The project's versions come from gtr.json: "engines": {"go": ">=1.26", "gtr": "^0.2"}.
-Overrides: GTR_GO_VERSION, GTR_MANAGER_VERSION. Home: %s (GTR_HOME).
+Overrides: gtr --go <version> <command>, gtr --gtr <version> <command>, or the
+GTR_GO_VERSION and GTR_MANAGER_VERSION variables. Home: %s (GTR_HOME).
 `, version, homeHint())
 }
 

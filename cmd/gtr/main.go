@@ -44,7 +44,9 @@ func newApp(stdout, stderr io.Writer) *cli.App {
 		Environ:    os.Environ,
 		Executable: os.Executable,
 		NewGo: func(l home.Layout) *goinstall.Installer {
-			return &goinstall.Installer{Home: l, Log: stderr}
+			// GTR_GO_MIRROR: a mirror of https://go.dev/dl/ (for example
+			// https://golang.google.cn/dl/).
+			return &goinstall.Installer{Home: l, BaseURL: os.Getenv("GTR_GO_MIRROR"), Log: stderr}
 		},
 		NewSource: func(l home.Layout, app, repo string) *release.Source {
 			return &release.Source{App: app, Repo: repo, API: os.Getenv("GTR_GITHUB_API"), Token: githubToken(), Home: l, Log: stderr}

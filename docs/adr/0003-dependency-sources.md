@@ -35,9 +35,17 @@ Value forms:
 |---|---|---|
 | `^0.1` | The gtr registry (for gtr packages) or proxy.golang.org (for Go modules) | The main form; for gtr packages, after stage 6 |
 | `github:<owner>/<repo>[/<subdir>]#<range>` | GitHub, versions from git tags | Now, until the registry exists |
-| `gitlab:…#<range>`, `git+https://host/repo.git[/<subdir>]#<range>` | Other git hosts | Later |
+| `gitlab:<group>[/<subgroup>…]/<project>[//<subdir>]#<range>` | GitLab (gitlab.com or `GTR_GITLAB_URL`), versions from git tags | Now |
+| `git+https://host/repo.git[//<subdir>]#<range>` (also `git+ssh://`, `git+file://`) | Any git server through the `git` command | Now |
 | `file:<path>` | A local directory, not copied | Developing several packages at once |
 | `workspace:*`, `workspace:<range>` | A member of the same workspace (ADR-0009) | Now |
+
+GitLab project paths and git URLs may contain any number of `/`, so their
+monorepo subdirectory follows `//`. GitLab is read through its REST API
+(`GTR_GITLAB_TOKEN`, or `GITLAB_TOKEN` for gitlab.com); `git+…` sources run `git`
+(`ls-remote`, a shallow `fetch` of one tag into `~/.gtr/cache/git`, `archive`), so
+authentication is git's own: credential helpers, SSH keys. Plain `git+http://` is
+refused.
 
 Rules:
 

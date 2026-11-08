@@ -1,6 +1,6 @@
 # ADR-0008. Version selection, gtr-manager releases and command forwarding
 
-Status: **Proposed** · 2026-10-09
+Status: **Accepted** · 2026-10-09
 
 ## Context
 
@@ -18,7 +18,8 @@ releases, so there was nothing for the launcher to install.
    when the range names one.
 
 2. **Go is selected** for a directory, highest priority first:
-   1. `GTR_GO_VERSION`;
+   1. `GTR_GO_VERSION`, or the same as a flag: `gtr --go 1.25 <command>`
+      (`gtr --gtr 0.2 <command>` sets `GTR_MANAGER_VERSION`);
    2. the nearest `gtr.json` upwards: `engines.go` (the legacy `engine` field
       written by older `gtr-manager init` is read too);
    3. the global default (`gtr self use go <version>`, stored in `~/.gtr/config.json`).
@@ -38,7 +39,7 @@ releases, so there was nothing for the launcher to install.
    message saying which file required it. `gtr self current` shows the result and
    the reason.
 
-5. **Project commands are forwarded**: `gtr new|init|install|uninstall|run|start …`
+5. **Project commands are forwarded**: `gtr new|init|install|add|remove|update|ci|sync|run|start|list|why|outdated …`
    runs the selected gtr-manager with the same arguments. When a Go version is
    selected, the child gets `PATH=<goroot>/bin:…`, `GOROOT`, `GTR_GO_VERSION=<exact>`
    (nested calls keep the same Go) and `GOTOOLCHAIN=local` unless already set (Go
@@ -72,7 +73,18 @@ releases, so there was nothing for the launcher to install.
    likely): a complete installation is never deleted or replaced; the process that
    loses the race uses the winner's copy.
 
-8. **Self-update** replaces the running executable by renaming it to `gtr.old`
+8. **Installation and housekeeping.** `install.sh` (Linux, macOS) and `install.ps1`
+   (Windows) install the latest release into `~/.gtr/bin` with the same
+   `SHA256SUMS` check, create the shims and put that directory first in `PATH`.
+   `gtr self list --remote` lists installable versions, `gtr self prune` removes
+   downloaded archives and versions superseded by a newer patch (keeping the
+   defaults and what the current directory uses), `gtr env` prints what applies
+   in a directory without installing anything, `gtr doctor` checks the home
+   directory, `PATH` and shims, environment variables that break gtr, the project
+   and the network. Downloads resume after a dropped connection. `GTR_GO_MIRROR`
+   replaces https://go.dev/dl/.
+
+9. **Self-update** replaces the running executable by renaming it to `gtr.old`
    (allowed on Windows even while running) and moving the new binary into place;
    `gtr.old` is removed on the next start.
 
@@ -80,7 +92,7 @@ releases, so there was nothing for the launcher to install.
 
 - A fresh machine needs only `gtr`: the first project command installs the Go and
   gtr-manager versions the project asks for.
-- Until gtr-manager has published releases, developers use `gtr self link gtr`.
+- `gtr self link gtr` remains for developing gtr-manager itself.
 - After rebuilding gtr locally, run `gtr self shims` again: hard-linked shims keep
   pointing at the old file.
 - A GitHub release is the trust root for binaries; signing (e.g. Sigstore) can be

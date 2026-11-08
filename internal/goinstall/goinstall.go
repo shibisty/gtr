@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"gtr/internal/archive"
+	"gtr/internal/download"
 	"gtr/internal/home"
 	"gtr/internal/semver"
 )
@@ -55,6 +56,8 @@ type Installer struct {
 	GOOS    string       // defaults to runtime.GOOS
 	GOARCH  string       // defaults to runtime.GOARCH
 	Log     io.Writer    // progress messages; discarded by default
+	// Backoff is the pause before retrying a dropped download (default 1s).
+	Backoff time.Duration
 }
 
 func (in *Installer) defaults() {
@@ -204,37 +207,9 @@ func (in *Installer) download(ctx context.Context, f File) (string, error) {
 
 	url := in.BaseURL + f.Filename
 	fmt.Fprintf(in.Log, "Downloading %s\n", url)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return "", err
-	}
-	resp, err := in.Client.Do(req)
-	if err != nil {
+	g := &download.Getter{Client: in.Client, Log: in.Log, Backoff: in.Backoff}
+	if err := g.File(ctx, url, dst, f.SHA256); err != nil {
 		return "", fmt.Errorf("download %s: %w", f.Filename, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download %s: server responded %s", f.Filename, resp.Status)
-	}
-
-	tmp, err := os.CreateTemp(dir, f.Filename+".*.part")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(tmp.Name()) // no-op after rename
-	h := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tmp, h), resp.Body)
-	if cerr := tmp.Close(); err == nil {
-		err = cerr
-	}
-	if err != nil {
-		return "", fmt.Errorf("download %s: %w", f.Filename, err)
-	}
-	if got := hex.EncodeToString(h.Sum(nil)); got != f.SHA256 {
-		return "", fmt.Errorf("download %s: SHA-256 mismatch (expected %s, got %s)", f.Filename, f.SHA256, got)
-	}
-	if err := os.Rename(tmp.Name(), dst); err != nil {
-		return "", err
 	}
 	return dst, nil
 }
