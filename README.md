@@ -9,6 +9,8 @@ GTR is to Go what npm is to Node: dependencies are declared in `gtr.json`, insta
 one command and imported by short names (`import "orm"`), while `go.mod` is generated so
 the Go toolchain and IDEs keep working.
 
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
 ## Install
 
 ```bash
@@ -194,3 +196,7 @@ and `gtr self link gtr ./gtr-manager/build/gtr-manager`.
 fake servers (`cmd/gtr/e2e_test.go`, `cmd/gtr/install_script_test.go`).
 
 Design decisions: [docs/adr](docs/adr/README.md).
+
+[![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
+
+If this project helps you, consider supporting its development on Patreon ❤️
