@@ -1,19 +1,21 @@
 # Make recipes must be indented with a tab.
-VERSION ?= $(or $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//'),dev)
-LDFLAGS := -X main.Version=$(VERSION)
-.PHONY: build test vet build-win build-linux build-macos build-macos-arm
+# Builds go through gtr-manager itself (the "build" block of gtr.json); with gtr
+# installed, `gtr build`, `gtr build --all-targets --archive` and `gtr test` do the same.
+# VERSION: the v* tag on HEAD, else the version in gtr.json (make release VERSION=1.2.3).
+VERSION ?= $(shell git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null | sed 's/^v//')
+VFLAG := $(if $(VERSION),--version $(VERSION))
+GM := build/.bootstrap/gtr-manager
+.PHONY: build all release test vet bootstrap
 
-build:
-	go build -ldflags "$(LDFLAGS)" -o build/gtr ./cmd/gtr
+bootstrap:
+	go -C gtr-manager build -o ../$(GM) ./cmd/gtr-manager
+build: bootstrap
+	$(GM) build $(VFLAG)
+all: bootstrap
+	$(GM) build --all-targets $(VFLAG)
+release: bootstrap
+	$(GM) build --all-targets --archive $(VFLAG)
 test:
 	go test -race ./...
 vet:
 	go vet ./...
-build-win:
-	GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o build/gtr.exe ./cmd/gtr
-build-linux:
-	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o build/gtr-linux ./cmd/gtr
-build-macos:
-	GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o build/gtr-darwin ./cmd/gtr
-build-macos-arm:
-	GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o build/gtr-darwin-arm64 ./cmd/gtr

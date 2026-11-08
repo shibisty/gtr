@@ -55,8 +55,9 @@ releases, so there was nothing for the launcher to install.
    a child killed by a signal makes gtr exit with 128+signal. `gtr self update`
    refreshes existing shims.
 
-7. **Releases** of gtr and gtr-manager are GitHub releases built by `release.sh`
-   on a `v*` tag:
+7. **Releases** of gtr and gtr-manager are GitHub releases built on a `v*` tag
+   (by `release.sh` until 2026-11; since then by `gtr build --all-targets --archive`,
+   ADR-0010):
    ```
    <app>_<version>_<os>_<arch>.zip       Windows
    <app>_<version>_<os>_<arch>.tar.gz    other systems

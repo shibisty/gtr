@@ -40,6 +40,8 @@ var projectCommands = map[string]bool{
 	"update": true, "up": true, "upgrade": true, "ci": true, "sync": true,
 	"run": true, "start": true,
 	"list": true, "ls": true, "why": true, "outdated": true,
+	"build": true, "test": true, "dev": true, "publish": true, "link": true, "unlink": true,
+	// "version" with arguments (gtr version patch); alone it prints gtr's.
 }
 
 // ShimNames are the Go tools gtr can stand in for (see `gtr self shims`).
@@ -107,6 +109,9 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		Help(a.Out, a.Version)
 		return nil
 	case "version", "-v", "--version":
+		if cmd == "version" && len(args) > 1 {
+			return a.forward(ctx, args) // gtr version patch: the package version
+		}
 		fmt.Fprintln(a.Out, "gtr", a.Version)
 		return nil
 	case "self":
@@ -698,6 +703,9 @@ Project commands (run by gtr-manager with the project's Go; see gtr-manager help
     ci, sync                       Strict install from gtr.lock; regenerate go.mod
     run, start                     Run a script
     list, why, outdated            Inspect installed packages
+    build, dev, test               Build (cross-compile, archives), run with reload, test
+    version <bump>, publish        Release: bump gtr.json and tag; push the tag
+    link, unlink                   Use a local copy of a package
 
 Tools:
     env [--json] [NAME...]        Show the Go, gtr-manager and paths used here (installs nothing)
@@ -717,7 +725,7 @@ Versions:
     self update [version]         Update gtr itself
     self prune [--dry-run]        Remove downloaded archives and superseded patch versions
 
-    version                       Show the gtr version
+    version                       Show the gtr version (gtr version patch: the package's)
     help                          Show this help
 
 Version syntax: 1.26.9 (exact), 1.26 (latest 1.26.x), ^1.22, ~1.26, ">=1.26 <1.28".

@@ -35,8 +35,7 @@ the others in place. gtr generates `go.mod` (ADR-0001); it can generate `go.work
    silent download (bump the range or the member's version). `workspace:<range>`
    (`workspace:*`, `workspace:^0.1`; `workspace:^` and `workspace:~` mean any) names a
    member explicitly and is an error outside a workspace — suitable for monorepos whose
-   members are never installed alone, and replaced by a real range on publishing
-   (`gtr publish`).
+   members are never installed alone or published (`gtr publish` refuses it, ADR-0010).
 
 3. **One resolution for the whole workspace.** `gtr install` anywhere in a workspace
    installs it from the root: members are roots of the graph together with their
@@ -51,12 +50,17 @@ the others in place. gtr generates `go.mod` (ADR-0001); it can generate `go.work
      direct requirements, what those need in turn as indirect, no `replace`). Other
      members are not required: they come from `use`, and a versioned requirement on a
      workspace module makes go look that version up in the module proxy;
-   - the root gets a generated `go.mod` the same way;
+   - the root gets a generated `go.mod` the same way, but only if it has Go code of its
+     own (outside members, `gtr_modules/`, hidden directories, `testdata` and nested
+     projects). A root without code is not a module: its dependencies only override
+     sources for the members (`"faker": "file:../faker.go"`), and a `go.mod` requiring
+     them would be reported by gopls as "not used in this module". A generated root
+     `go.mod` is removed when the code goes (amended 2026-11-08);
    - a member directory that another project uses as a `file:` package keeps its
      workspace `go.mod` (it serves both; a package `go.mod` would require the other
      members at a placeholder version, which go cannot resolve in workspace mode);
    - the root gets a generated `go.work` with the same hash header as `go.mod`:
-     `use` of the root and every member, and the `replace` directives pointing into
+     `use` of every member (and of the root when it is a module), and the `replace` directives pointing into
      `gtr_modules/` (in workspace mode replacements belong to `go.work`).
    Members' and the root's `.gitignore` get `go.mod`; the root's also gets `go.work` and
    `go.work.sum`.
@@ -81,5 +85,7 @@ the others in place. gtr generates `go.mod` (ADR-0001); it can generate `go.work
 - A member's `go.mod` is regenerated when it joins a workspace; a hand-written one is
   reported like a foreign project `go.mod` (`gtr sync --force` replaces it).
 - Publishing (`gtr publish`) must refuse `workspace:` values that cannot be rewritten.
+  Since a release is a git tag, none can: `gtr publish` refuses `file:` and `workspace:`
+  in `dependencies` and `peerDependencies` (ADR-0010, 2026-11-08).
 - Not covered: nested workspaces, `**` globs, carrying edits of `go.work` back to
   `gtr.json` (`gtr sync --force` regenerates it).

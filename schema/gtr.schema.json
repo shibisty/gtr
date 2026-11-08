@@ -81,10 +81,15 @@
           "uniqueItems": true,
           "description": "GOOS/GOARCH, e.g. windows/amd64."
         },
-        "ldflags": { "type": "string", "description": "Supports {{version}}, {{commit}}, {{date}}." },
+        "ldflags": { "type": "string", "description": "Supports {{version}}, {{commit}}, {{date}}, {{name}}." },
         "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
         "cgo": { "type": "boolean", "default": false },
-        "trimpath": { "type": "boolean", "default": true }
+        "trimpath": { "type": "boolean", "default": true },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files and globs added to release archives (gtr build --archive); default README*, LICENSE*."
+        }
       }
     },
     "test": {

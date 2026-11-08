@@ -1,0 +1,14 @@
+{
+    "$schema": "./schema/gtr.schema.json",
+    "name": "gtr-launcher",
+    "version": "0.1.0",
+    "description": "gtr: Go version manager and launcher for gtr-manager",
+    "engines": {
+        "go": ">=1.26.5"
+    },
+    "build": {
+        "entry": "./cmd/gtr",
+        "output": "gtr",
+        "ldflags": "-s -w -X main.Version={{version}}"
+    }
+}

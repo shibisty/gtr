@@ -185,12 +185,18 @@ git submodule update --remote gtr-manager
 git commit -am "Update gtr-manager"
 ```
 
-CI: `.github/workflows/ci.workflow.yml`. Releases: pushing a tag `v1.2.3` runs
-`.github/workflows/release.workflow.yml`, which builds archives with `./release.sh` and
-publishes them with `SHA256SUMS`. Local builds: `make build` (build/gtr, version from
-`git describe`) or `./build.sh [version]`, which cross-compiles every platform into
-`build/<version>/<os>-<arch>/`. To try a gtr-manager change, `make build` in `gtr-manager/`
-and `gtr self link gtr ./gtr-manager/build/gtr-manager`.
+CI: `.github/workflows/ci.workflow.yml`. gtr is built by gtr-manager, from the `build`
+block of `gtr.json`: `gtr build` (this platform), `gtr build --all-targets` (every
+platform into `build/<version>/<os>-<arch>/`), `gtr build --all-targets --archive` (the
+release archives and `SHA256SUMS`). Without gtr installed, `make build`, `make all` and
+`make release` build gtr-manager from the submodule first and do the same.
+
+Releases: `gtr version patch` (bumps `gtr.json`, dates `CHANGELOG.md`, commits and tags
+`v0.1.1`), then `gtr publish` (checks and pushes the tag). The tag runs
+`.github/workflows/release.workflow.yml`, which builds the archives with gtr-manager from
+the submodule and publishes them as the GitHub release. To try a gtr-manager change,
+`go build -o build/gtr-manager ./cmd/gtr-manager` in `gtr-manager/` and
+`gtr self link gtr ./gtr-manager/build/gtr-manager`.
 
 `go test -short ./...` skips the end-to-end tests, which build gtr and run it against
 fake servers (`cmd/gtr/e2e_test.go`, `cmd/gtr/install_script_test.go`).

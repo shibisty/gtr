@@ -1,8 +1,10 @@
 name: Release
 
-# Pushing a tag v1.2.3 builds archives for every platform with release.sh and
-# publishes them, with SHA256SUMS, as the GitHub release v1.2.3.
-# gtr installs gtr from these releases (ADR-0008).
+# Move this file to .github/workflows/release.workflow.yml (replacing the old one).
+# Pushing a tag v1.2.3 (gtr version patch && gtr publish) builds archives for
+# every platform with gtr-manager from the submodule (gtr build, the "build" block of
+# gtr.json) and publishes them, with SHA256SUMS, as the GitHub release v1.2.3.
+# gtr installs and updates itself from these releases (install.sh, install.ps1, gtr self update) (ADR-0008).
 
 on:
   push:
@@ -25,13 +27,17 @@ jobs:
       - name: test
         run: go test -race ./...
       - name: build
-        # bash explicitly: the script may be committed without the executable bit
-        # (from Windows), and ./release.sh would then fail with "Permission denied".
-        run: bash ./release.sh "${GITHUB_REF_NAME}"
+        # gtr-manager from the submodule builds gtr (no download).
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          (cd gtr-manager && go build -o "$RUNNER_TEMP/gtr-manager" ./cmd/gtr-manager)
+          "$RUNNER_TEMP/gtr-manager" build --all-targets --archive --version "$version"
+          echo "DIST=build/$version" >> "$GITHUB_ENV"
       - name: publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           prerelease=""
           case "${GITHUB_REF_NAME}" in *-*) prerelease="--prerelease" ;; esac
-          gh release create "${GITHUB_REF_NAME}" dist/* --title "${GITHUB_REF_NAME}" --generate-notes $prerelease
+          gh release create "${GITHUB_REF_NAME}" "$DIST"/*.zip "$DIST"/*.tar.gz "$DIST"/SHA256SUMS \
+            --title "${GITHUB_REF_NAME}" --generate-notes $prerelease

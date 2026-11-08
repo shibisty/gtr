@@ -19,9 +19,16 @@
 - Downloads of Go and releases resume after a dropped connection (Range requests, up to
   four attempts) and show progress on a terminal.
 - `list`, `ls`, `why` and `outdated` are forwarded to gtr-manager.
-- `build.sh`, `build.ps1`, `win.ps1` and `make build` take the version from `git describe`
-  and write `build/<version>/<os>-<arch>/`.
+- `build`, `dev`, `test`, `publish`, `link`, `unlink` and `version <bump>` are forwarded to
+  gtr-manager (`gtr version` alone still prints gtr's version).
+- gtr builds and releases itself: `gtr.json` with a `build` block; the release workflow
+  runs `gtr-manager build --all-targets --archive` from the submodule (ADR-0010).
+  `make build|all|release` do the same without gtr installed.
 - ADR 0004, 0007 and 0008 accepted; ADR-0003 documents `gitlab:` and `git+` sources.
+- ADR-0010 (build, test, release, links).
+
+### Removed
+- `build.sh`, `build.ps1`, `win.ps1` and `release.sh`: replaced by `gtr build`.
 
 ## 0.1.0 — 2026-10-09
 

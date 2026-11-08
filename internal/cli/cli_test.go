@@ -265,6 +265,17 @@ func TestForwardUsesProjectVersions(t *testing.T) {
 		t.Fatalf("env %v", c.env)
 	}
 
+	for _, args := range [][]string{{"build", "--all-targets"}, {"test", "--coverage"}, {"version", "patch"}, {"publish"}, {"link", "orm"}} {
+		h.calls = nil
+		if err := h.run(args...); err != nil || len(h.calls) != 1 || strings.Join(h.calls[0].args, " ") != strings.Join(args, " ") {
+			t.Fatalf("%v: not forwarded: %v %v", args, err, h.calls)
+		}
+	}
+	h.calls = nil
+	if err := h.run("version"); err != nil || len(h.calls) != 0 {
+		t.Fatalf("gtr version alone was forwarded: %v", h.calls)
+	}
+
 	h.code = 3
 	if err := h.run("install", "github:a/b"); err != ExitCode(3) {
 		t.Fatalf("exit code: %v", err)
