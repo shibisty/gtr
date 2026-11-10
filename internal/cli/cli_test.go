@@ -688,3 +688,27 @@ func TestHomeError(t *testing.T) {
 		t.Error("shim without home")
 	}
 }
+
+func TestUnknownCommands(t *testing.T) {
+	h := newHarness(t)
+	err := h.run("instal")
+	if !errors.Is(err, ErrUsage) || !strings.Contains(err.Error(), "did you mean `gtr install`?") {
+		t.Fatal(err)
+	}
+	if err := h.run("frobnicate"); !errors.Is(err, ErrUsage) || strings.Contains(err.Error(), "did you mean") {
+		t.Fatal(err)
+	}
+	if err := h.run("-x"); !errors.Is(err, ErrUsage) {
+		t.Fatal(err)
+	}
+	// In a project, gtr-manager decides: a script of that name, or a suggestion.
+	h.installGo("1.26.9")
+	h.installManager("0.1.0")
+	h.project(`{"name":"app","engines":{"go":"1.26"},"scripts":{"migrate":"go run . migrate"}}`)
+	if err := h.run("migrate", "--step", "2"); err != nil {
+		t.Fatal(err)
+	}
+	if c := h.calls[len(h.calls)-1]; strings.Join(c.args, " ") != "migrate --step 2" {
+		t.Fatalf("forwarded %v", c.args)
+	}
+}

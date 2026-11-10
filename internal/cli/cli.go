@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"gtr/internal/config"
@@ -16,6 +17,7 @@ import (
 	"gtr/internal/goinstall"
 	"gtr/internal/home"
 	"gtr/internal/manager"
+	"gtr/internal/project"
 	"gtr/internal/release"
 	"gtr/internal/resolve"
 	"gtr/internal/runner"
@@ -41,6 +43,8 @@ var projectCommands = map[string]bool{
 	"run": true, "start": true,
 	"list": true, "ls": true, "why": true, "outdated": true,
 	"build": true, "test": true, "dev": true, "publish": true, "link": true, "unlink": true,
+	"login": true, "logout": true, "whoami": true, "search": true, "info": true, "view": true,
+	"yank": true, "unyank": true, "owner": true, "owners": true,
 	// "version" with arguments (gtr version patch); alone it prints gtr's.
 }
 
@@ -50,6 +54,7 @@ var ShimNames = []string{"go", "gofmt"}
 // App is gtr with its dependencies, which tests replace.
 type App struct {
 	Version    string
+	In         io.Reader // gtr mcp reads requests from it (nil: os.Stdin)
 	Out        io.Writer
 	Err        io.Writer
 	GOOS       string
@@ -120,9 +125,21 @@ func (a *App) Run(ctx context.Context, args []string) error {
 		return a.env(ctx, args[1:])
 	case "doctor":
 		return a.doctor(ctx, args[1:])
+	case "mcp":
+		return a.mcp(ctx, args[1:])
 	default:
 		if projectCommands[cmd] {
 			return a.forward(ctx, args)
+		}
+		// In a project, gtr-manager runs a script of that name (gtr migrate
+		// → gtr run migrate) or suggests the command that was meant.
+		if wd, err := a.Getwd(); err == nil && !strings.HasPrefix(cmd, "-") {
+			if p, _ := project.Find(wd); p != nil {
+				return a.forward(ctx, args)
+			}
+		}
+		if s := suggest(cmd); s != "" {
+			return fmt.Errorf("%w: unknown command %q; did you mean `gtr %s`?", ErrUsage, cmd, s)
 		}
 		return fmt.Errorf("%w: unknown command %q", ErrUsage, cmd)
 	}
@@ -704,12 +721,16 @@ Project commands (run by gtr-manager with the project's Go; see gtr-manager help
     run, start                     Run a script
     list, why, outdated            Inspect installed packages
     build, dev, test               Build (cross-compile, archives), run with reload, test
-    version <bump>, publish        Release: bump gtr.json and tag; push the tag
+    version <bump>, publish        Release: bump gtr.json and tag; publish to the registry or push the tag
     link, unlink                   Use a local copy of a package
+    login, search, info, yank, owner
+                                   The gtr package registry (GTR_REGISTRY)
 
 Tools:
     env [--json] [NAME...]        Show the Go, gtr-manager and paths used here (installs nothing)
     doctor [--offline]            Check the installation, PATH, the project and the network
+    mcp [--allow-publish]         MCP server on stdio for Claude Code / Claude Desktop
+                                  (--print-config: client settings; mcp bundle: a .mcpb extension)
 
 Versions:
     self install go [version]     Install Go (no version: what gtr.json requires)
@@ -740,4 +761,50 @@ func homeHint() string {
 		return d
 	}
 	return "~/.gtr"
+}
+
+// suggest returns the command closest to a mistyped one ("" when none is
+// one or two edits away).
+func suggest(cmd string) string {
+	names := []string{"help", "version", "self", "env", "doctor"}
+	for n := range projectCommands {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	best, bestDist := "", 3
+	for _, n := range names {
+		if d := editDistance(cmd, n); d < bestDist {
+			best, bestDist = n, d
+		}
+	}
+	if bestDist > len(cmd)/2 {
+		return ""
+	}
+	return best
+}
+
+// editDistance is the Damerau-Levenshtein distance ("tset" → "test" is one edit).
+func editDistance(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	d := make([][]int, len(ra)+1)
+	for i := range d {
+		d[i] = make([]int, len(rb)+1)
+		d[i][0] = i
+	}
+	for j := range d[0] {
+		d[0][j] = j
+	}
+	for i := 1; i <= len(ra); i++ {
+		for j := 1; j <= len(rb); j++ {
+			cost := 1
+			if ra[i-1] == rb[j-1] {
+				cost = 0
+			}
+			d[i][j] = min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+cost)
+			if i > 1 && j > 1 && ra[i-1] == rb[j-2] && ra[i-2] == rb[j-1] {
+				d[i][j] = min(d[i][j], d[i-2][j-2]+1)
+			}
+		}
+	}
+	return d[len(ra)][len(rb)]
 }

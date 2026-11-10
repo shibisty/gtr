@@ -3,6 +3,22 @@
 ## Unreleased
 
 ### Added
+- `gtr mcp`: an MCP server on stdio for Claude Code and Claude Desktop (ADR-0011) — tools for
+  packages (`list`, `why`, `outdated`, `add`, `remove`, `install`, `update`, `sync`, `link`),
+  scripts, tests (results and coverage per package as JSON), builds, the registry and
+  `publish` (a dry run without `--allow-publish`); resources `gtr://gtr.json`, `gtr://gtr.lock`,
+  `gtr://schema`. Protocol revisions 2024-11-05 to 2025-11-25 (initialize) and 2026-07-28
+  (stateless, `server/discover`). `gtr mcp --print-config` prints the client settings,
+  `gtr mcp bundle` writes a Claude Desktop extension (.mcpb).
+- A Claude Code plugin (`plugin/`, marketplace in `.claude-plugin/`): the `gtr mcp` server and
+  a skill for gtr projects.
+- The registry commands of gtr-manager are forwarded: `login`, `logout`, `whoami`, `search`,
+  `info`, `yank`, `unyank`, `owner`.
+- `schema/gtr.schema.json` accepts npm dependencies: `"preact": "npm:^10.19"`, scoped names like
+  `@preact/signals`.
+- In a project, a command gtr does not know goes to gtr-manager, which runs the script of that
+  name (`gtr migrate` → `gtr run migrate`); elsewhere a mistyped command gets a suggestion
+  (``unknown command "instal"; did you mean `gtr install`?``).
 - `gtr env [--json] [NAME...]` — the Go, gtr-manager, paths and go environment that apply
   in a directory; installs nothing (missing versions are shown as `GTR_GO_REQUIRED`).
 - `gtr doctor [--offline]` — checks the home directory, installed versions, the linked

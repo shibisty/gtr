@@ -1,0 +1,17 @@
+{
+  "name": "gtr",
+  "owner": {
+    "name": "shibisty",
+    "url": "https://github.com/shibisty"
+  },
+  "metadata": {
+    "description": "gtr, the Go package manager and launcher, for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "gtr",
+      "source": "./plugin",
+      "description": "Work with gtr projects: packages, scripts, tests and builds through gtr instead of the bare go command"
+    }
+  ]
+}

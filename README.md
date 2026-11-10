@@ -133,6 +133,34 @@ go errors with a hint, for example
 `go tool` are left without hints, so your program still sees the terminal. In a
 workspace (a `go.work` gtr generated, ADR-0009) the shim sets `GOWORK` to it instead.
 
+### Claude (MCP)
+
+`gtr mcp` is a [Model Context Protocol](https://modelcontextprotocol.io) server on stdio,
+so Claude Code and Claude Desktop work with a project through gtr instead of the bare go
+command: they install packages, run scripts and tests and read `gtr.json` and `gtr.lock`,
+and see the same hints as you do in a terminal ([ADR-0011](docs/adr/0011-mcp.md)).
+
+```bash
+claude mcp add gtr -- gtr mcp       # Claude Code, in the project
+gtr mcp --print-config              # the JSON for .mcp.json or claude_desktop_config.json
+gtr mcp bundle -o gtr.mcpb          # a Claude Desktop extension: open it in Claude Desktop
+```
+
+Or install the plugin (the server and a skill that tells Claude to use it):
+
+```
+/plugin marketplace add shibisty/gtr
+/plugin install gtr@gtr
+```
+
+Tools: `project_info`, `list`, `why`, `outdated`, `search`, `info`, `env`, `doctor` (read
+only); `add`, `remove`, `install`, `update`, `sync`, `link`, `unlink`, `version_bump`
+(change the project: Claude asks first); `run`, `test`, `build` (time limit, exit code and
+results per package); `publish` (a dry run unless the server runs with `--allow-publish`);
+`self_install` (only with `--allow-self-install`). Resources: `gtr://gtr.json`,
+`gtr://gtr.lock`, `gtr://schema`. The server works in the workspace root or the project
+above the directory it starts in (`--root` to choose) and refuses directories outside it.
+
 ### Environment
 
 | Variable | Meaning |

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gtr": {
+      "command": "gtr",
+      "args": ["mcp", "--root", "${CLAUDE_PROJECT_DIR}", "--allow-publish=${user_config.allow_publish}"]
+    }
+  }
+}

@@ -16,5 +16,6 @@ Statuses: **Accepted** — agreed; **Proposed** — awaiting the author's decisi
 | [0008](0008-version-selection.md) | Version selection, gtr-manager releases and command forwarding | Accepted |
 | [0009](0009-workspaces.md) | Workspaces: local development of package families | Accepted |
 | [0010](0010-build-test-release.md) | Build, test, release and links | Accepted |
+| [0011](0011-mcp.md) | gtr mcp: the MCP server for Claude | Accepted |
 
 The prototype that validated 0001 and 0002: [docs/prototype/bridge](../prototype/bridge/README.md).

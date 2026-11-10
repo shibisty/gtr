@@ -1,0 +1,22 @@
+{
+  "name": "gtr",
+  "displayName": "gtr",
+  "version": "0.1.0",
+  "description": "Work with gtr projects: packages, scripts, tests and builds through gtr (gtr mcp) instead of the bare go command",
+  "author": {
+    "name": "shibisty",
+    "url": "https://github.com/shibisty"
+  },
+  "homepage": "https://github.com/shibisty/gtr",
+  "repository": "https://github.com/shibisty/gtr",
+  "license": "MIT",
+  "keywords": ["go", "golang", "package-manager", "gtr", "mcp"],
+  "userConfig": {
+    "allow_publish": {
+      "type": "boolean",
+      "title": "Allow publishing",
+      "description": "Let Claude publish packages with gtr publish (otherwise only a dry run)",
+      "default": false
+    }
+  }
+}

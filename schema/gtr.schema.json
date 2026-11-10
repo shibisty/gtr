@@ -130,6 +130,12 @@
     "importPath": {
       "anyOf": [{ "$ref": "#/$defs/packageName" }, { "$ref": "#/$defs/goModulePath" }]
     },
+    "npmName": {
+      "type": "string",
+      "description": "An npm package name (a value npm:...): preact, @preact/signals.",
+      "maxLength": 214,
+      "pattern": "^(@[a-z0-9][a-z0-9._~-]*/)?[a-z0-9][a-z0-9._~-]*$"
+    },
     "semver": {
       "type": "string",
       "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
@@ -148,12 +154,13 @@
         { "description": "gitlab:group[/subgroup]/project[//subdir][#range]", "pattern": "^gitlab:[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+(//[A-Za-z0-9_./-]+)?(#.+)?$" },
         { "description": "git+https://host/repo.git[//subdir][#range], also git+ssh:// and git+file://", "pattern": "^git\\+(https|ssh|file)://[^#\\s]+(#.+)?$" },
         { "pattern": "^file:.+$" },
-        { "pattern": "^workspace:.*$" }
+        { "pattern": "^workspace:.*$" },
+        { "description": "npm:<range>: an npm package installed into node_modules (frontend)", "pattern": "^npm:.*$" }
       ]
     },
     "dependencyMap": {
       "type": "object",
-      "propertyNames": { "$ref": "#/$defs/importPath" },
+      "propertyNames": { "anyOf": [{ "$ref": "#/$defs/importPath" }, { "$ref": "#/$defs/npmName" }] },
       "additionalProperties": { "$ref": "#/$defs/dependencySpec" }
     }
   }
