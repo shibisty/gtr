@@ -23,7 +23,7 @@
 | `GTR_GOSUMDB` | checksum database URL or `off` (default from `GOSUMDB`) |
 | `GOPRIVATE`, `GONOSUMDB` | modules not looked up publicly |
 | `GTR_NPM_REGISTRY`, `GTR_NPM_TOKEN` | npm registry and its token |
-| `GTR_REGISTRY` | the gtr registry (default: the last `gtr login`, else http://localhost:4873) |
+| `GTR_REGISTRY` | the gtr registry (default: the last `gtr login`, else https://gtr.shibisty.com; a local one is http://localhost:4873) |
 | `GTR_REGISTRY_TOKEN` | registry token (CI) |
 
 ## Set by gtr for the commands it runs

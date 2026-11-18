@@ -36,12 +36,15 @@ npm solves this with scopes (`@babel/core`) and workspaces that publish together
    any `@orm/…` package. Existing packages keep their own owners (`gtr owner add`).
    Registry URLs carry the name as one segment (`/api/v1/packages/@orm%2Fpostgres`); web
    pages are at `/packages/@orm/postgres`; luna-pages entries get the slug `orm/postgres`.
-6. **Monorepos.** One repository holds a family as a workspace. Members depend on each
-   other with `workspace:` ranges. `gtr publish -r` (anywhere in the workspace) publishes
-   every member that is not private and whose version the registry does not have yet, in
-   dependency order, and stops at the first failure (running it again continues). The
-   repository must be clean (`--allow-dirty` to override); each member's tests run
-   unless `--skip-tests`.
+6. **Monorepos.** A family is a workspace: one repository, or a repository of the
+   workspace with every member as a git submodule (each package keeps its own repository
+   and CI). `gtr publish -r` (anywhere in the workspace) publishes every member that is not
+   private and whose version the registry does not have yet, in dependency order, and
+   stops at the first failure (running it again continues). Every repository it publishes
+   from must be clean (`--allow-dirty` to override); each member's tests run unless
+   `--skip-tests`. Members refer to each other with `workspace:` ranges (one repository)
+   or with plain registry ranges (`"@passport/oauth2": "^0.2"`, which also install in a
+   member's own CI; inside the workspace the member's folder wins, ADR-0009).
 7. **What goes into the archive.** Like pnpm, the archive's `gtr.json` gets registry
    ranges instead of member references; the member's own `gtr.json` is not changed:
 
@@ -60,10 +63,12 @@ npm solves this with scopes (`@babel/core`) and workspaces that publish together
 
 ## Consequences
 
-- The families move to one repository each and to scoped names: `@passport/facebook`,
-  `@orm/postgres`, `@fullstack/orm`, `@migration/orm`. Consumers change their keys
+- The families move to scoped names (`@passport/facebook`, `@orm/postgres`,
+  `@fullstack/orm`, `@migration/orm`) and publish from their workspaces; their packages
+  keep their own repositories, as submodules of the workspace's repository. Consumers change their keys
   (`"orm-postgres"` → `"@orm/postgres"`) and imports (`"orm-postgres"` →
   `"orm/postgres"`). `github:` sources keep working for the old names.
+- The default registry becomes the public `https://gtr.shibisty.com`.
 - A new family claims its scope with its first publish, so it should publish the bare
   core name or a scoped package before anybody else does.
 - `gtr version` in a member still tags `<name>@<version>`; for a scoped name the tag is
