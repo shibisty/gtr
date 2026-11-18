@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Added
+- Documentation in `docs/`: a guide from installing gtr to creating, developing, testing,
+  building and publishing a project (14 pages), and references for the commands, gtr.json and
+  the environment.
 - `gtr mcp`: an MCP server on stdio for Claude Code and Claude Desktop (ADR-0011) — tools for
   packages (`list`, `why`, `outdated`, `add`, `remove`, `install`, `update`, `sync`, `link`),
   scripts, tests (results and coverage per package as JSON), builds, the registry and

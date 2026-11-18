@@ -11,6 +11,9 @@ the Go toolchain and IDEs keep working.
 
 [![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/cw/shibisty)
 
+**Documentation:** [docs/](docs/README.md) — from installing to creating, developing,
+testing and publishing a project ([getting started](docs/guide/01-install.md)).
+
 ## Install
 
 ```bash
