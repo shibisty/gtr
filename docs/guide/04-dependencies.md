@@ -10,8 +10,8 @@ gtr add -D <source>...       # devDependencies (tests, tools)
 | Source | Example | Saved as |
 |---|---|---|
 | gtr registry | `gtr add orm`, `gtr add orm@^0.2` | `"orm": "^0.2"` |
-| GitHub | `gtr add github:shibisty/orm.go` | `"orm": "github:shibisty/orm.go#^0.2"` |
-| GitHub, a range | `gtr add github:shibisty/orm.go#^0.1` | the range as given |
+| GitHub | `gtr add orm` | `"orm": "orm#^0.2"` |
+| GitHub, a range | `gtr add orm#^0.1` | the range as given |
 | a monorepo folder | `gtr add github:owner/repo/packages/http` | |
 | GitLab | `gtr add gitlab:group/project`, `gitlab:group/project//sub/dir` | |
 | any git server | `gtr add git+https://git.example.com/team/lib.git` (also `git+ssh://`, `git+file://`) | |
@@ -57,7 +57,7 @@ disagree, gtr says who asked for what:
 ```
 no version of orm satisfies all requirements:
   the project requires orm ^0.2
-  orm-mysql@0.1.0 requires orm ^0.1
+  @orm/mysql@0.1.0 requires orm ^0.1
 available versions: 0.2.0, 0.1.3, 0.1.0
 ```
 
@@ -91,19 +91,19 @@ gtr outdated             # newer versions (--all: also indirect ones)
 
 ```
 Package        Current  Wanted  Latest  Source
-orm            0.1.3    0.1.5   0.2.0   github:shibisty/orm.go
+orm            0.1.3    0.1.5   0.2.0   orm
 faker (dev)    0.1.0    0.1.0   0.2.0   github:shibisty/faker.go
 ```
 
 *Wanted* is the newest version your ranges allow — what `gtr update` installs. To get
-*Latest*, change the range: `gtr add github:shibisty/orm.go#^0.2`.
+*Latest*, change the range: `gtr add orm#^0.2`.
 
 ## Updating and removing
 
 ```bash
 gtr update               # every package to the newest version its range allows
 gtr update orm           # only orm
-gtr remove orm-mysql     # from gtr.json, gtr.lock, gtr_modules/ and go.mod
+gtr remove @orm/mysql     # from gtr.json, gtr.lock, gtr_modules/ and go.mod
 ```
 
 ## Private packages and tokens

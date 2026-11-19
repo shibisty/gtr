@@ -10,12 +10,12 @@ orm.go/
   gtr.json             {"name": "orm-dev", "private": true, "workspaces": ["core", "drivers/*"]}
   core/gtr.json        {"name": "orm", "version": "0.2.0"}
   drivers/mysql/gtr.json
-                       {"name": "orm-mysql", "dependencies": {"orm": "github:shibisty/orm.go#^0.2"}}
+                       {"name": "orm/mysql", "dependencies": {"orm": "orm#^0.2"}}
 ```
 
 - **Members win.** A dependency on a member's name — from the root, a member or any
   downloaded package, whatever its source — uses the member's folder. Its version must
-  still fit the range. So `orm-mysql` keeps its real source (it has to install on its own,
+  still fit the range. So `@orm/mysql` keeps its real source (it has to install on its own,
   in its own CI), and inside the workspace it gets the local `orm` without edits.
   `"orm": "workspace:*"` (what `gtr add orm` writes in a member) names a member explicitly.
 - **One install.** `gtr install` anywhere in the workspace installs everything from the

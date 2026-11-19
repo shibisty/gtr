@@ -72,7 +72,7 @@ gtr dev -- --port 8080     # arguments for the program
 
 `gtr dev` watches the Go files, `gtr.json` and `.env` of the package and of every
 workspace member, and loads `.env` like scripts do. A failed build keeps the old process
-running and prints the error. In a web application with fullstack-bundler, the browser
+running and prints the error. In a web application with @fullstack/bundler, the browser
 also reloads by itself and CSS changes apply without a reload ([Web applications](12-web-apps.md)).
 
 Next: [Go versions](07-go-versions.md).

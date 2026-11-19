@@ -13,7 +13,7 @@ for completion in editors.
 | `license` | string | SPDX identifier, e.g. `MIT` |
 | `author` | string or object | `"Ann <ann@example.com>"` or `{"name", "email", "url"}` |
 | `homepage` | string | |
-| `repository` | string | e.g. `github:shibisty/orm.go` |
+| `repository` | string | e.g. `orm` |
 | `private` | boolean | `gtr publish` refuses the package (applications, workspace roots) |
 | `engines.go` | range | which Go runs the project; the `go` line of `go.mod` |
 | `engines.gtr` | range | which gtr-manager runs the project |

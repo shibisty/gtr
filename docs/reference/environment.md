@@ -24,6 +24,7 @@
 | `GOPRIVATE`, `GONOSUMDB` | modules not looked up publicly |
 | `GTR_NPM_REGISTRY`, `GTR_NPM_TOKEN` | npm registry and its token |
 | `GTR_REGISTRY` | the gtr registry (default: the last `gtr login`, else https://gtr.shibisty.com; a local one is http://localhost:4873) |
+| `GTR_PROGRESS` | `0`: no progress line in `gtr install`; `1`: draw it even when stderr does not look like a terminal (off by default in CI and `gtr mcp`) |
 | `GTR_REGISTRY_TOKEN` | registry token (CI) |
 
 ## Set by gtr for the commands it runs

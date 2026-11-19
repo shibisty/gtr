@@ -45,11 +45,11 @@ go run . list                     # every console command
 
 ## A frontend without Node.js
 
-Frontend code lives next to the Go code and is built by fullstack-bundler, which runs
+Frontend code lives next to the Go code and is built by @fullstack/bundler, which runs
 esbuild inside your application — no Node.js, no separate watcher:
 
 ```bash
-gtr add github:shibisty/fullstack.go-bundler
+gtr add @fullstack/bundler
 gtr add npm:preact                # npm packages go into node_modules/, installed by gtr
 ```
 

@@ -32,7 +32,7 @@ Where a gtr package exists for something you use, swap it in at your own pace:
 
 ```bash
 gtr remove github.com/someone/orm
-gtr add github:shibisty/orm.go
+gtr add orm
 ```
 
 ## Keeping go.mod for others

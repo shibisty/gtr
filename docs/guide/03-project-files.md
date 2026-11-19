@@ -13,8 +13,8 @@
     "private": true,
     "engines": { "go": ">=1.22", "gtr": "^0.2" },
     "dependencies": {
-        "orm": "github:shibisty/orm.go#^0.2",
-        "orm-postgres": "github:shibisty/orm.go-postgres-driver#^0.1",
+        "orm": "^0.2",
+        "@orm/postgres": "^0.2",
         "github.com/google/uuid": "^1.6"
     },
     "devDependencies": {
@@ -32,7 +32,7 @@
 - **`engines.go`** decides which Go runs the project and the `go` line of `go.mod`;
   **`engines.gtr`** which gtr-manager. Both are ranges ([Go versions](07-go-versions.md)).
 - **`dependencies`** are keyed by import path, valued by where the package comes from:
-  `import "orm"`, `import postgres "orm-postgres"`, `import "github.com/google/uuid"`.
+  `import "orm"`, `import postgres "orm/postgres"`, `import "github.com/google/uuid"`.
 - **`devDependencies`** are for tests and tools; an application that depends on your
   package does not get them.
 - **`private: true`** stops `gtr publish` — for applications.
